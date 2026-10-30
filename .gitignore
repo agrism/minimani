@@ -1,0 +1,33 @@
+# Environment variables
+.env
+.env.local
+
+# Operating System
+.DS_Store
+Thumbs.db
+
+# Go
+backend/bin/
+backend/tmp/
+*.exe
+*.test
+*.out
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Downloaded media / caches
+media/
+backend/media/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+

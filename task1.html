@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="lv">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tehniskais uzdevums — MiniCenu spēle</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --text: #1f2328;
+            --muted: #59636e;
+            --border: #d1d9e0;
+            --accent: #0969da;
+            --accent-soft: #ddf4ff;
+            --code-bg: #f6f8fa;
+            --code-border: #d1d9e0;
+            --table-header: #f6f8fa;
+            --warn-bg: #fff8c5;
+            --warn-border: #d4a72c;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--text);
+            background: var(--bg);
+        }
+
+        .container {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 32px 24px 80px;
+        }
+
+        header.doc-header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 24px;
+            margin-bottom: 32px;
+        }
+
+        header.doc-header h1 {
+            font-size: 2.2rem;
+            margin: 0 0 8px;
+            line-height: 1.25;
+        }
+
+        header.doc-header .subtitle {
+            color: var(--muted);
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        nav.toc {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin-bottom: 40px;
+        }
+
+        nav.toc h2 {
+            font-size: 1rem;
+            margin: 0 0 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--muted);
+            border: none;
+            padding: 0;
+        }
+
+        nav.toc ol {
+            margin: 0;
+            padding-left: 20px;
+            columns: 2;
+            column-gap: 32px;
+        }
+
+        nav.toc li {
+            margin-bottom: 4px;
+            break-inside: avoid;
+        }
+
+        nav.toc a {
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        nav.toc a:hover {
+            color: var(--accent);
+            text-decoration: underline;
+        }
+
+        h2 {
+            font-size: 1.6rem;
+            margin: 48px 0 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            scroll-margin-top: 16px;
+        }
+
+        h3 {
+            font-size: 1.2rem;
+            margin: 32px 0 12px;
+            scroll-margin-top: 16px;
+        }
+
+        h4 {
+            font-size: 1rem;
+            margin: 20px 0 8px;
+        }
+
+        p {
+            margin: 12px 0;
+        }
+
+        ul,
+        ol {
+            padding-left: 24px;
+            margin: 12px 0;
+        }
+
+        li {
+            margin: 4px 0;
+        }
+
+        strong {
+            font-weight: 600;
+        }
+
+        a {
+            color: var(--accent);
+        }
+
+        code {
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+            font-size: 0.88em;
+            background: var(--code-bg);
+            border: 1px solid var(--code-border);
+            border-radius: 4px;
+            padding: 1px 6px;
+        }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--code-border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            overflow-x: auto;
+            line-height: 1.5;
+            margin: 16px 0;
+        }
+
+        pre code {
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 0.86rem;
+            white-space: pre;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 0.94rem;
+        }
+
+        thead {
+            background: var(--table-header);
+        }
+
+        th,
+        td {
+            border: 1px solid var(--border);
+            padding: 10px 14px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) tbody tr {
+            background: #fafbfc;
+        }
+
+        .warn {
+            background: var(--warn-bg);
+            border-left: 4px solid var(--warn-border);
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin: 16px 0;
+        }
+
+        .warn strong {
+            display: inline;
+        }
+
+        .callout {
+            background: var(--accent-soft);
+            border-left: 4px solid var(--accent);
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin: 16px 0;
+        }
+
+        footer.doc-footer {
+            margin-top: 64px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 720px) {
+            nav.toc ol {
+                columns: 1;
+            }
+
+            .container {
+                padding: 20px 16px 60px;
+            }
+
+            header.doc-header h1 {
+                font-size: 1.6rem;
+            }
+
+            h2 {
+                font-size: 1.35rem;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            th,
+            td {
+                padding: 8px 10px;
+            }
+        }
+
+        @media print {
+            body {
+                font-size: 11pt;
+            }
+
+            .container {
+                max-width: none;
+                padding: 0;
+            }
+
+            nav.toc {
+                page-break-after: always;
+            }
+
+            h2 {
+                page-break-after: avoid;
+            }
+
+            pre,
+            table {
+                page-break-inside: avoid;
+            }
+
+            a {
+                color: var(--text);
+                text-decoration: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <header class="doc-header">
+            <h1>Tehniskais uzdevums — "MiniCenu" tipa cenu minēšanas spēle</h1>
+            <p class="subtitle">Ražošanas līmeņa arhitektūra · Go + React + PostgreSQL + PostGIS + Docker + Hetzner</p>
+        </header>
+
+        <nav class="toc">
+            <h2>Saturs</h2>
+            <ol>
+                <li><a href="#s1">Projekta kopsavilkums</a></li>
+                <li><a href="#s2">Arhitektūras kopsavilkums</a></li>
+                <li><a href="#s3">Tehnoloģiju izvēle</a></li>
+                <li><a href="#s4">Funkcionālās prasības</a></li>
+                <li><a href="#s5">Datu modelis (PostgreSQL + PostGIS)</a></li>
+                <li><a href="#s6">API specifikācija</a></li>
+                <li><a href="#s7">Frontend prasības</a></li>
+                <li><a href="#s8">Izvietošana (Docker Compose uz Hetzner)</a></li>
+                <li><a href="#s9">Drošības prasības</a></li>
+                <li><a href="#s10">Izstrādes secība</a></li>
+                <li><a href="#s11">Atlikušie lēmumi</a></li>
+                <li><a href="#s12">Kritiski svarīgas piezīmes</a></li>
+            </ol>
+        </nav>
+
+        <h2 id="s1">1. Projekta kopsavilkums</h2>
+        <p>Izveidot tīmekļa spēli, kurā lietotājs min cenas reāliem sludinājumiem (galvenokārt no Latvijas sludinājumu
+            vietnēm), iegūst punktus par precizitāti un var sacensties ar draugiem. Spēle ir latviešu valodā, mobilā
+            pirmā, bez reģistrācijas sākumā.</p>
+        <p>Mērķis nav MVP — uzreiz tiek būvēta ražošanas līmeņa arhitektūra ar PostgreSQL, Go backend, React frontend,
+            Docker izvietošanu uz Hetzner.</p>
+
+        <h2 id="s2">2. Arhitektūras kopsavilkums</h2>
+        <pre><code>Lietotājs → Cloudflare (DNS + CDN) → Hetzner VPS
+                                    ├── Caddy (HTTPS, reverse proxy, statisko failu apkalpošana)
+                                    ├── Go backend (API + WebSocket + viegls SSR SEO vajadzībām)
+                                    ├── PostgreSQL 16 + PostGIS (dati + ģeogrāfiskie punkti)
+                                    ├── Redis 7 (sesijas, daudzspēlētāju pub/sub)
+                                    └── React SPA (Vite būvēti statiskie faili)</code></pre>
+        <p>Galvenais princips: frontends ir tikai renderēšanas slānis. Visi jutīgie dati (pareizās cenas, precizitātes
+            aprēķini, spēles sesiju stāvoklis) paliek serverī. Frontendā nekas netiek glabāts.</p>
+
+        <h2 id="s3">3. Tehnoloģiju izvēle</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Slānis</th>
+                    <th>Tehnoloģija</th>
+                    <th>Pamatojums</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Frontend</td>
+                    <td>React 18 + Vite + TypeScript + Tailwind CSS</td>
+                    <td>SPA, nav SEO vajadzību spēles kodolam, vienkārša izvietošana</td>
+                </tr>
+                <tr>
+                    <td>Backend</td>
+                    <td>Go (chi vai gin maršrutēšana) + sqlc</td>
+                    <td>Mazāks resursu patēriņš, laba konkurence WebSocket, tipu droši SQL vaicājumi</td>
+                </tr>
+                <tr>
+                    <td>Datubāze</td>
+                    <td>PostgreSQL 16 + PostGIS</td>
+                    <td>Telpiskie dati nākotnes kartēm, nogatavojusies</td>
+                </tr>
+                <tr>
+                    <td>Kešatmiņa/ziņojumi</td>
+                    <td>Redis 7</td>
+                    <td>Daudzspēlētāju pub/sub, sesiju kešatmiņa</td>
+                </tr>
+                <tr>
+                    <td>WebSocket</td>
+                    <td>Go + gorilla/websocket</td>
+                    <td>Daudzspēlētāju istabu režīms</td>
+                </tr>
+                <tr>
+                    <td>HTTPS/reversais proxijs</td>
+                    <td>Caddy</td>
+                    <td>Automātisks Let's Encrypt, vienkārša konfigurācija</td>
+                </tr>
+                <tr>
+                    <td>Izvietošana</td>
+                    <td>Docker Compose</td>
+                    <td>Pietiek vienam serverim</td>
+                </tr>
+                <tr>
+                    <td>Serveris</td>
+                    <td>Hetzner CAX21 (4 Arm vCPU / 8GB RAM) vai CX32</td>
+                    <td>Izmaksu ziņā efektīvs</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 id="s4">4. Funkcionālās prasības</h2>
+
+        <h3>4.1. Viena spēlētāja režīms (HTTP)</h3>
+        <ol>
+            <li>Sākuma ekrāns ar pogu "Spēlēt" un kategoriju izvēli.</li>
+            <li>Kategoriju izvēle (vismaz 3: Automašīnas, Dzīvokļi, Sadzīves tehnika).</li>
+            <li>Spēles ekrāns: viens sludinājums (attēls + nosaukums + apraksts) un cenas ievades lauks.</li>
+            <li>Laika limits: 60 sekundes uz vienu sludinājumu (konfigurējams).</li>
+            <li>Atbildes iesniegšana ar pogu "Apstiprināt".</li>
+            <li>Tūlītēja atgriezeniskā saite: pareizā cena, lietotāja minējums, precizitātes procents.</li>
+            <li>Poga "Tālāk" pāriet uz nākamo sludinājumu.</li>
+            <li>Pēc 10 sludinājumiem — rezultātu ekrāns ar kopējo precizitāti, labāko un sliktāko minējumu, dalīšanās
+                pogu.</li>
+        </ol>
+
+        <h3>4.2. Precizitātes aprēķins</h3>
+        <p>Formula: <code>precizitāte_% = max(0, 100 - (|minējums - pareizā_cena| / pareizā_cena) * 100)</code></p>
+        <p>Kopējais rezultāts: vidējais aritmētiskais no 10 minējumiem.</p>
+
+        <h3>4.3. Daudzspēlētāju režīms (WebSocket)</h3>
+        <ul>
+            <li>Istabas izveide ar kodu un saiti.</li>
+            <li>Spēlētāji pievienojas pēc koda.</li>
+            <li>Visi spēlētāji min vienus un tos pašus sludinājumus.</li>
+            <li>Rezultātu ekrāns ar visu spēlētāju ranglistu.</li>
+            <li>WebSocket tiek izmantots tikai daudzspēlētāju režīmā; viena spēlētāja režīmā pietiek ar HTTP.</li>
+        </ul>
+
+        <h3>4.4. Nākotnes funkcijas (nav jābūvē tagad, bet arhitektūra jāatstāj vieta)</h3>
+        <ul>
+            <li>Iknedēļas ranglists.</li>
+            <li>Lietotāju profili (Supabase auth vai līdzīgi).</li>
+            <li>Karšu skats ar sludinājumu atrašanās vietām (PostGIS dēļ).</li>
+            <li>Iespēja ieteikt sludinājumus.</li>
+            <li>Kategoriju paplašināšana.</li>
+        </ul>
+
+        <h2 id="s5">5. Datu modelis (PostgreSQL + PostGIS)</h2>
+
+        <h3>5.1. Listing (jautājumu banka)</h3>
+        <pre><code>CREATE EXTENSION IF NOT EXISTS postgis;
+
+CREATE TABLE listings (
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    category      TEXT NOT NULL,
+    title         TEXT NOT NULL,
+    description   TEXT,
+    image_url     TEXT NOT NULL,
+    actual_price  NUMERIC(12,2) NOT NULL,
+    currency      TEXT NOT NULL DEFAULT 'EUR',
+    source_url    TEXT,
+    location      GEOGRAPHY(POINT, 4326),
+    region        TEXT,
+    is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_listings_location ON listings USING GIST (location);
+CREATE INDEX idx_listings_category ON listings (category) WHERE is_active;</code></pre>
+        <div class="warn"><strong>Kritiski:</strong> <code>actual_price</code> nedrīkst nonākt API atbildē pirms
+            lietotāja iesniegšanas.</div>
+
+        <h3>5.2. GameSession un Guess</h3>
+        <pre><code>CREATE TABLE game_sessions (
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    mode          TEXT NOT NULL,
+    category      TEXT NOT NULL,
+    listing_ids   UUID[] NOT NULL,
+    current_index INT NOT NULL DEFAULT 0,
+    status        TEXT NOT NULL DEFAULT 'active',
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE guesses (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id   UUID NOT NULL REFERENCES game_sessions(id),
+    listing_id   UUID NOT NULL REFERENCES listings(id),
+    player_id    TEXT,
+    guess_value  NUMERIC(12,2) NOT NULL,
+    accuracy     NUMERIC(5,2) NOT NULL,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);</code></pre>
+        <p>Precizitāte tiek aprēķināta serverī, frontendam tikai nolasāma.</p>
+
+        <h2 id="s6">6. API specifikācija</h2>
+
+        <h3>6.1. Viena spēlētāja režīms (HTTP)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Metode</th>
+                    <th>Ceļš</th>
+                    <th>Funkcija</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>POST</td>
+                    <td><code>/api/game/single/start</code></td>
+                    <td>Izveido sesiju, atgriež sessionId + pirmo jautājumu (bez cenas)</td>
+                </tr>
+                <tr>
+                    <td>POST</td>
+                    <td><code>/api/game/single/guess</code></td>
+                    <td>Iesniedz minējumu, atgriež pareizo cenu un precizitāti</td>
+                </tr>
+                <tr>
+                    <td>POST</td>
+                    <td><code>/api/game/single/next</code></td>
+                    <td>Pāriet uz nākamo jautājumu, atgriež nākamo jautājumu (bez cenas)</td>
+                </tr>
+                <tr>
+                    <td>POST</td>
+                    <td><code>/api/game/single/finish</code></td>
+                    <td>Pabeidz, atgriež kopsavilkumu</td>
+                </tr>
+            </tbody>
+        </table>
+        <p>Visas atbildes nekad nesatur pareizo cenu pirms iesniegšanas.</p>
+
+        <h3>6.2. Daudzspēlētāju režīms (HTTP + WebSocket)</h3>
+        <p>HTTP daļa:</p>
+        <ul>
+            <li><code>POST /api/game/multi/create</code> — izveido istabu, atgriež roomCode un saiti.</li>
+            <li><code>POST /api/game/multi/join</code> — pievienojas istabai pēc koda.</li>
+        </ul>
+        <p>WebSocket notikumi (Socket.IO vai gorilla/websocket ar līdzīgu protokolu):</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Virziens</th>
+                    <th>Notikums</th>
+                    <th>Dati</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Client→Server</td>
+                    <td><code>room:ready</code></td>
+                    <td>Sagatavots</td>
+                </tr>
+                <tr>
+                    <td>Server→Client</td>
+                    <td><code>room:players</code></td>
+                    <td>Spēlētāju saraksts</td>
+                </tr>
+                <tr>
+                    <td>Server→Client</td>
+                    <td><code>game:start</code></td>
+                    <td>Sākas spēle</td>
+                </tr>
+                <tr>
+                    <td>Server→Client</td>
+                    <td><code>game:question</code></td>
+                    <td>Jautājums (bez cenas)</td>
+                </tr>
+                <tr>
+                    <td>Client→Server</td>
+                    <td><code>game:guess</code></td>
+                    <td><code>{ listingId, guessValue }</code></td>
+                </tr>
+                <tr>
+                    <td>Server→Client</td>
+                    <td><code>game:guess:result</code></td>
+                    <td><code>{ playerId, actualPrice, accuracy }</code></td>
+                </tr>
+                <tr>
+                    <td>Server→Client</td>
+                    <td><code>game:scoreboard</code></td>
+                    <td>Pašreizējie rezultāti</td>
+                </tr>
+                <tr>
+                    <td>Server→Client</td>
+                    <td><code>game:finished</code></td>
+                    <td>Galīgais rangs</td>
+                </tr>
+            </tbody>
+        </table>
+        <p>WebSocket autentifikācija: pievienojoties istabai, jāpārbauda derīgs roomCode + parakstīts spēlētāja tokens.
+        </p>
+
+        <h2 id="s7">7. Frontend prasības</h2>
+
+        <h3>7.1. Ekrāni</h3>
+        <ol>
+            <li>Sākums — liela poga "Spēlēt", kategoriju kartītes.</li>
+            <li>Spēle — attēls, nosaukums, apraksts, cenas ievades lauks, taimeris, poga "Apstiprināt".</li>
+            <li>Atgriezeniskā saite — pārklājums ar pareizo cenu, minējumu, precizitāti, poga "Tālāk".</li>
+            <li>Rezultāti — liels precizitātes %, sadalījums, poga "Spēlēt vēlreiz" un "Dalīties".</li>
+        </ol>
+
+        <h3>7.2. Dizaina principi</h3>
+        <ul>
+            <li>Mobilā pirmā.</li>
+            <li>Lieli pieskāriena mērķi (min 44×44 px).</li>
+            <li>Latviešu valoda UI tekstos.</li>
+            <li>Vienkāršs, spēlīgs dizains.</li>
+            <li>Kontrasts atbilst WCAG AA.</li>
+        </ul>
+
+        <h3>7.3. SEO risinājums (nākotnei)</h3>
+        <p>Frontends ir React SPA, bet Go serveris pirms statiskā faila atgriešanas veic vieglu SSR:</p>
+        <ul>
+            <li><code>index.html</code> satur meta tagu vietturus (<code>__TITLE__</code>,
+                <code>__DESCRIPTION__</code>).</li>
+            <li>Go pēc pieprasījuma ceļa aizstāj vietturus ar attiecīgās lapas saturu.</li>
+            <li>Ja nākotnē nepieciešams indeksēt daudz satura lapu, var pievienot atsevišķu Next.js pakalpojumu tikai
+                SEO lapām, nemainot React SPA.</li>
+        </ul>
+
+        <h2 id="s8">8. Izvietošana (Docker Compose uz Hetzner)</h2>
+
+        <h3>8.1. Pakalpojumi docker-compose.yml</h3>
+        <ul>
+            <li><code>caddy</code> — HTTPS, reverse proxy, statisko failu apkalpošana. Publicē tikai 80/443.</li>
+            <li><code>backend</code> — Go API + WebSocket + viegls SSR.</li>
+            <li><code>postgres</code> — PostgreSQL 16 ar PostGIS paplašinājumu (izmantot <code>postgis/postgis</code>
+                attēlu).</li>
+            <li><code>redis</code> — Redis 7.</li>
+            <li><code>frontend</code> — React būvētie statiskie faili (var būt Caddy sējumā vai atsevišķā attēlā).</li>
+        </ul>
+        <p>Postgres un Redis darbojas tikai iekšējā Docker tīklā, nav pakļauti publiskajam tīklam.</p>
+
+        <h3>8.2. Izvietošanas soļi</h3>
+        <ol>
+            <li>Servera inicializācija: Ubuntu 24.04 LTS, SSH atslēga, Hetzner Cloud Firewall atļauj tikai 22
+                (ierobežots ar IP), 80, 443.</li>
+            <li>Instalē Docker + Compose plugin no Docker oficiālā repozitorija.</li>
+            <li>Klonē repozitoriju, izveido <code>.env</code> (Postgres parole, Redis parole, <code>AUTH_SECRET</code>
+                utt., ģenerē ar <code>openssl rand -hex 32</code>).</li>
+            <li><code>docker compose up -d</code>, pārbaudi veselību.</li>
+            <li>Rezerves kopijas: <code>pg_dump</code> cron.</li>
+        </ol>
+
+        <h2 id="s9">9. Drošības prasības</h2>
+        <ul>
+            <li>Pareizā cena nekad neparādās frontendā pirms iesniegšanas.</li>
+            <li>API ātruma ierobežošana uz <code>/api/guess</code> un istabas izveides endpointiem pēc IP.</li>
+            <li>Postgres nepieejams no ārpuses.</li>
+            <li>WebSocket autentifikācija ar parakstītu tokenu.</li>
+            <li>Docker publicētie porti var apiet ufw — tikai Caddy publicē 80/443.</li>
+            <li>Žurnāli un veselības pārbaudes endpointi.</li>
+            <li>Ja saglabā precīzas koordinātas, jāpievieno nejauša nobīde (piem., 500 m) privātuma aizsardzībai.</li>
+        </ul>
+
+        <h2 id="s10">10. Izstrādes secība</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Posms</th>
+                    <th>Saturs</th>
+                    <th>Aptuvenais laiks</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Hetzner serveris + Docker + Caddy + Postgres + Redis darbība</td>
+                    <td>1 diena</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>PostgreSQL shēma + PostGIS + sqlc ģenerēšana + sēklas dati (50–100 jautājumi)</td>
+                    <td>1–2 dienas</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Go viena spēlētāja API (start/guess/next/finish) + React SPA lapa</td>
+                    <td>3–5 dienas</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>Go WebSocket serveris + istabu loģika + sinhronizācija</td>
+                    <td>5–7 dienas</td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td>Rezultātu kopsavilkums, kopīgošanas karte, atkārtota spēlēšana</td>
+                    <td>2 dienas</td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td>SEO viegls SSR (meta tagu vietturi)</td>
+                    <td>1 diena</td>
+                </tr>
+                <tr>
+                    <td>7</td>
+                    <td>Drošības sacietēšana, žurnāli, rezerves kopijas</td>
+                    <td>1–2 dienas</td>
+                </tr>
+            </tbody>
+        </table>
+        <p>Kopā aptuveni 2–3 nedēļas atkarībā no ikdienas laika ieguldījuma.</p>
+
+        <h2 id="s11">11. Atlikušie lēmumi, kas jāapstiprina izstrādes laikā</h2>
+        <ol>
+            <li>Vai daudzspēlētāju režīms ir obligāts pirmajā versijā? Ja nē, vispirms viena spēlētāja pilnā plūsma,
+                WebSocket otrajā iterācijā.</li>
+            <li>Vai Redis tiek izmantots no sākuma? Ieteicams jā, lai vēlāk būtu vieglāk paplašināt.</li>
+            <li>Vai izmanto Prisma vai sqlc? Izvēlēts sqlc (tipu drošība, nav ORM ierobežojumu PostGIS funkcijām).</li>
+            <li>Vai Go maršrutēšanai izmanto chi vai gin? Abi der, chi ir vieglāks.</li>
+            <li>Vai frontend statiskos failus apkalpo Caddy vai Go? Caddy ir vienkāršāk.</li>
+        </ol>
+
+        <h2 id="s12">12. Kritiski svarīgas piezīmes</h2>
+        <ul>
+            <li><strong>Cenas godīgums:</strong> ja cena ir klienta JSON failā, lietotājs to var izlasīt. Tāpēc cena
+                glabājas tikai PostgreSQL un tiek atgriezta tikai pēc minējuma iesniegšanas.</li>
+            <li><strong>Attēlu autortiesības:</strong> ja ņem ss.lv attēlus, tie pieder sludinājumu autoriem. Publiskā
+                produktā labāk prasīt atļauju vai izmantot savus attēlus.</li>
+            <li><strong>ss.lv scraping:</strong> ja automātiski velk sludinājumus, jāpārbauda ss.lv lietošanas
+                noteikumi. Drošāk — manuāli pievienot sludinājumus.</li>
+            <li><strong>GDPR:</strong> ja vāc lietotāju datus (vārdus ranglistam), vajag privātuma politiku. Sākumā
+                izmantot anonīmus ID.</li>
+            <li><strong>PostGIS:</strong> izmantot <code>GEOGRAPHY</code> (nevis <code>GEOMETRY</code>) un SRID 4326.
+                <code>GIST</code> indekss ir obligāts telpiskajiem vaicājumiem.</li>
+            <li><strong>Ģeokodēšana:</strong> adrese → koordinātas jāveic kā fona uzdevums, nevis sinhroni API
+                pieprasījumā. Var izmantot Nominatim (OpenStreetMap) vai komerciālos pakalpojumus.</li>
+        </ul>
+
+        <footer class="doc-footer">
+            <p>Dokuments: Tehniskais uzdevums — MiniCenu spēle · Statuss: apstiprināts izstrādei · Valoda: latviešu</p>
+        </footer>
+
+    </div>
+</body>
+
+</html>

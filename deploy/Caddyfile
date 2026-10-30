@@ -1,0 +1,31 @@
+{
+    email {$ACME_EMAIL:admin@example.com}
+}
+
+{$DOMAIN:localhost} {
+    encode gzip zstd
+
+    # WebSocket
+    handle /ws/* {
+        reverse_proxy backend:8088
+    }
+
+    # Backend API
+    handle /api/* {
+        reverse_proxy backend:8088
+    }
+
+    # Media assets
+    handle /media/* {
+        root * /var/media
+        file_server
+    }
+
+    # React SPA Static Files
+    handle {
+        root * /srv/frontend
+        try_files {path} /index.html
+        file_server
+    }
+}
+
