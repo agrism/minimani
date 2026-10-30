@@ -87,6 +87,7 @@ func (s *Server) setupRoutes() {
 		r.Post("/register", s.handleRegister)
 		r.Post("/login", s.handleLogin)
 		r.Get("/me", s.handleGetMe)
+		r.Put("/profile", s.handleUpdateProfile)
 	})
 
 	r.Route("/api/rooms", func(r chi.Router) {
@@ -301,6 +302,52 @@ func (s *Server) handleGetMe(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
 		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Lietotājs nav atrasts"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"user": user,
+	})
+}
+
+type UpdateProfileRequest struct {
+	Nickname    string `json:"nickname"`
+	Avatar      string `json:"avatar"`
+	NewPassword string `json:"new_password,omitempty"`
+}
+
+func (s *Server) handleUpdateProfile(w http.ResponseWriter, r *http.Request) {
+	authHeader := r.Header.Get("Authorization")
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Nav autorizēts"})
+		return
+	}
+	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+
+	userID, err := s.authService.VerifyToken(tokenStr)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Nederīga sesija"})
+		return
+	}
+
+	var req UpdateProfileRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Nederīgi pieprasījuma dati"})
+		return
+	}
+
+	user, err := s.authService.UpdateProfile(r.Context(), userID, req.Nickname, req.Avatar, req.NewPassword)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
 

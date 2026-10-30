@@ -12,6 +12,7 @@ interface HomeScreenProps {
   onQuickJoin: () => void;
   onOpenRules?: () => void;
   onOpenAuth?: () => void;
+  onOpenEditProfile?: () => void;
 }
 
 const AVATARS = ['🚗', '🏎️', '🚜', '🏡', '💎', '📱', '🔨', '🍻', '🌲', '👑', '🚀', '🔥'];
@@ -26,6 +27,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onQuickJoin,
   onOpenRules,
   onOpenAuth,
+  onOpenEditProfile,
 }) => {
   const [code, setCode] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -66,18 +68,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   return (
     <div className="w-full max-w-md mx-auto px-4 py-6 space-y-6">
-      {/* Profila kartīte */}
-      <div className="bg-slate-800/80 backdrop-blur border border-slate-700/80 rounded-2xl p-4 shadow-xl">
-        <div className="flex items-center justify-between mb-2">
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            Tavs spēlētāja profils
-          </label>
-          {currentUser ? (
-            <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> Konts: {currentUser.email}
-            </span>
-          ) : (
-            onOpenAuth && (
+      {/* Viesa profila kartīte (tikai tad, ja nav ielogojies) */}
+      {!currentUser ? (
+        <div className="bg-slate-800/80 backdrop-blur border border-slate-700/80 rounded-2xl p-4 shadow-xl">
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Tavs viesa profils
+            </label>
+            {onOpenAuth && (
               <button
                 type="button"
                 onClick={onOpenAuth}
@@ -85,70 +83,99 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               >
                 <span>Viesis · Reģistrēties</span>
               </button>
-            )
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+              className="w-14 h-14 rounded-2xl bg-slate-700/80 hover:bg-slate-700 flex items-center justify-center text-3xl border-2 border-amber-500/50 hover:border-amber-400 transition-all shadow-inner relative group shrink-0 active:scale-95"
+              title="Nospied, lai mainītu avataru"
+            >
+              {avatar}
+              <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black flex items-center justify-center shadow">
+                ✎
+              </span>
+            </button>
+            <div className="flex-1">
+              <input
+                type="text"
+                value={nickname}
+                onChange={(e) => onUpdateProfile(e.target.value, avatar)}
+                placeholder="Ievadi savu vārdu..."
+                maxLength={20}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-100 placeholder-slate-500 font-semibold focus:outline-none focus:border-amber-500 transition-colors"
+              />
+            </div>
+          </div>
+
+          {/* Atveramais avataru panelis (nekad nepārklāj pogas) */}
+          {showAvatarPicker && (
+            <div className="mt-3 pt-3 border-t border-slate-700/70">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
+                  Izvēlies savu tēlu:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowAvatarPicker(false)}
+                  className="text-[11px] text-amber-400 font-bold hover:underline"
+                >
+                  Aizvērt ✕
+                </button>
+              </div>
+              <div className="grid grid-cols-6 gap-2">
+                {AVATARS.map((a) => (
+                  <button
+                    key={a}
+                    type="button"
+                    onClick={() => {
+                      onUpdateProfile(nickname, a);
+                      setShowAvatarPicker(false);
+                    }}
+                    className={`w-11 h-11 rounded-xl text-2xl flex items-center justify-center transition-all ${
+                      avatar === a
+                        ? 'bg-amber-500/20 border-2 border-amber-400 scale-105 shadow-md shadow-amber-500/20'
+                        : 'bg-slate-900 border border-slate-700 hover:bg-slate-750 active:scale-95'
+                    }`}
+                  >
+                    {a}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setShowAvatarPicker(!showAvatarPicker)}
-            className="w-14 h-14 rounded-2xl bg-slate-700/80 hover:bg-slate-700 flex items-center justify-center text-3xl border-2 border-amber-500/50 hover:border-amber-400 transition-all shadow-inner relative group shrink-0 active:scale-95"
-            title="Nospied, lai mainītu avataru"
-          >
-            {avatar}
-            <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black flex items-center justify-center shadow">
-              ✎
-            </span>
-          </button>
-          <div className="flex-1">
-            <input
-              type="text"
-              value={nickname}
-              onChange={(e) => onUpdateProfile(e.target.value, avatar)}
-              placeholder="Ievadi savu vārdu..."
-              maxLength={20}
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-100 placeholder-slate-500 font-semibold focus:outline-none focus:border-amber-500 transition-colors"
-            />
+      ) : (
+        /* Ja ir ielogojies: kompakta statusa rindiņa ar pogu Rediģēt */
+        <div className="flex items-center justify-between px-4 py-3 bg-slate-900/80 border border-slate-800 rounded-2xl shadow-md">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-2xl border border-slate-750 shrink-0">
+              {currentUser.avatar}
+            </div>
+            <div className="min-w-0">
+              <div className="font-extrabold text-sm text-slate-100 flex items-center gap-1.5 truncate">
+                <span className="truncate">{currentUser.nickname}</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold shrink-0">
+                  Profils aktīvs
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-400 font-mono truncate">
+                {currentUser.email}
+              </div>
+            </div>
           </div>
+          {onOpenEditProfile && (
+            <button
+              type="button"
+              onClick={onOpenEditProfile}
+              className="text-xs font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-3 py-1.5 rounded-xl transition-all shadow-sm active:scale-95 shrink-0 ml-2"
+            >
+              Rediģēt
+            </button>
+          )}
         </div>
-
-        {/* Atveramais avataru panelis (nekad nepārklāj pogas) */}
-        {showAvatarPicker && (
-          <div className="mt-3 pt-3 border-t border-slate-700/70">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
-                Izvēlies savu tēlu:
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowAvatarPicker(false)}
-                className="text-[11px] text-amber-400 font-bold hover:underline"
-              >
-                Aizvērt ✕
-              </button>
-            </div>
-            <div className="grid grid-cols-6 gap-2">
-              {AVATARS.map((a) => (
-                <button
-                  key={a}
-                  type="button"
-                  onClick={() => {
-                    onUpdateProfile(nickname, a);
-                    setShowAvatarPicker(false);
-                  }}
-                  className={`w-11 h-11 rounded-xl text-2xl flex items-center justify-center transition-all ${
-                    avatar === a
-                      ? 'bg-amber-500/20 border-2 border-amber-400 scale-105 shadow-md shadow-amber-500/20'
-                      : 'bg-slate-900 border border-slate-700 hover:bg-slate-750 active:scale-95'
-                  }`}
-                >
-                  {a}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Galvenās pogas */}
       <div className="grid grid-cols-1 gap-3">

@@ -7,11 +7,13 @@ import { RevealScreen } from './components/RevealScreen';
 import { PodiumScreen } from './components/PodiumScreen';
 import { RulesModal } from './components/RulesModal';
 import { AuthModal } from './components/AuthModal';
+import { EditProfileModal } from './components/EditProfileModal';
 import { Room, User } from './types';
 
 export const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
 
   const [playerId, setPlayerId] = useState<string>(() => {
     let id = localStorage.getItem('minimani_player_id');
@@ -66,6 +68,25 @@ export const App: React.FC = () => {
     setPlayerId('user_' + user.id);
     localStorage.setItem('minimani_nickname', user.nickname);
     localStorage.setItem('minimani_avatar', user.avatar);
+  };
+
+  const handleProfileUpdated = (updatedUser: User) => {
+    setCurrentUser(updatedUser);
+    setNickname(updatedUser.nickname);
+    setAvatar(updatedUser.avatar);
+    localStorage.setItem('minimani_nickname', updatedUser.nickname);
+    localStorage.setItem('minimani_avatar', updatedUser.avatar);
+
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      socketRef.current.send(
+        JSON.stringify({
+          action: 'join',
+          player_id: playerId,
+          nickname: updatedUser.nickname,
+          avatar: updatedUser.avatar,
+        })
+      );
+    }
   };
 
   const handleLogout = () => {
@@ -268,6 +289,7 @@ export const App: React.FC = () => {
         onLeave={room ? handleLeaveRoom : undefined}
         onOpenRules={() => setShowRules(true)}
         onOpenAuth={() => setShowAuth(true)}
+        onOpenEditProfile={() => setShowEditProfile(true)}
         onLogout={handleLogout}
       />
 
@@ -284,6 +306,7 @@ export const App: React.FC = () => {
             onQuickJoin={handleQuickJoin}
             onOpenRules={() => setShowRules(true)}
             onOpenAuth={() => setShowAuth(true)}
+            onOpenEditProfile={() => setShowEditProfile(true)}
           />
         )}
 
@@ -392,6 +415,14 @@ export const App: React.FC = () => {
         isOpen={showAuth}
         onClose={() => setShowAuth(false)}
         onAuthSuccess={handleAuthSuccess}
+      />
+
+      {/* Profila rediģēšanas logs */}
+      <EditProfileModal
+        isOpen={showEditProfile}
+        onClose={() => setShowEditProfile(false)}
+        currentUser={currentUser}
+        onProfileUpdated={handleProfileUpdated}
       />
     </div>
   );

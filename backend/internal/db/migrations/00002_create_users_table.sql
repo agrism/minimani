@@ -17,3 +17,4 @@ CREATE INDEX IF NOT EXISTS idx_users_nickname ON users (lower(nickname));
 
 -- +goose Down
 DROP TABLE IF EXISTS users;
+

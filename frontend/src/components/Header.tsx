@@ -9,6 +9,7 @@ interface HeaderProps {
   onLeave?: () => void;
   onOpenRules?: () => void;
   onOpenAuth?: () => void;
+  onOpenEditProfile?: () => void;
   onLogout?: () => void;
 }
 
@@ -19,6 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
   onLeave,
   onOpenRules,
   onOpenAuth,
+  onOpenEditProfile,
   onLogout,
 }) => {
   return (
@@ -56,10 +58,17 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Lietotāja profila vai Ienākšanas poga */}
         {currentUser ? (
           <div className="flex items-center gap-1.5 bg-slate-850 border border-slate-750 px-2.5 py-1.5 rounded-xl shadow-sm">
-            <span className="text-base">{currentUser.avatar}</span>
-            <span className="text-xs font-bold text-slate-200 hidden sm:inline max-w-[100px] truncate">
-              {currentUser.nickname}
-            </span>
+            <button
+              type="button"
+              onClick={onOpenEditProfile}
+              className="flex items-center gap-1.5 hover:opacity-85 transition-opacity"
+              title="Skatīt un rediģēt profilu"
+            >
+              <span className="text-base">{currentUser.avatar}</span>
+              <span className="text-xs font-bold text-slate-200 hidden sm:inline max-w-[100px] truncate">
+                {currentUser.nickname}
+              </span>
+            </button>
             {onLogout && (
               <button
                 onClick={onLogout}

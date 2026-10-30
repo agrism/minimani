@@ -147,6 +147,54 @@ func (s *AuthService) GetUserByID(ctx context.Context, id string) (*User, error)
 	return &user, nil
 }
 
+func (s *AuthService) UpdateProfile(ctx context.Context, userID, nickname, avatar, newPassword string) (*User, error) {
+	nickname = strings.TrimSpace(nickname)
+	if len(nickname) < 2 || len(nickname) > 30 {
+		return nil, errors.New("segvārdam (nikam) jābūt no 2 līdz 30 simboliem")
+	}
+	if avatar == "" {
+		avatar = "🚗"
+	}
+
+	var user User
+	if newPassword != "" {
+		if len(newPassword) < 6 {
+			return nil, errors.New("jaunajai parolei jābūt vismaz 6 simbolus garai")
+		}
+		hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, fmt.Errorf("paroles apstrādes kļūda: %w", err)
+		}
+		err = s.pool.QueryRow(ctx, `
+			UPDATE users
+			SET nickname = $1, avatar = $2, password_hash = $3, updated_at = now()
+			WHERE id = $4
+			RETURNING id, email, nickname, avatar, games_played, games_won, total_score, created_at
+		`, nickname, avatar, string(hash), userID).Scan(
+			&user.ID, &user.Email, &user.Nickname, &user.Avatar,
+			&user.GamesPlayed, &user.GamesWon, &user.TotalScore, &user.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("neizdevās atjaunināt profilu: %w", err)
+		}
+	} else {
+		err := s.pool.QueryRow(ctx, `
+			UPDATE users
+			SET nickname = $1, avatar = $2, updated_at = now()
+			WHERE id = $3
+			RETURNING id, email, nickname, avatar, games_played, games_won, total_score, created_at
+		`, nickname, avatar, userID).Scan(
+			&user.ID, &user.Email, &user.Nickname, &user.Avatar,
+			&user.GamesPlayed, &user.GamesWon, &user.TotalScore, &user.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("neizdevās atjaunināt profilu: %w", err)
+		}
+	}
+
+	return &user, nil
+}
+
 func (s *AuthService) VerifyToken(tokenStr string) (string, error) {
 	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -181,3 +229,4 @@ func (s *AuthService) generateToken(userID, email, nickname string) (string, err
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return t.SignedString(s.jwtSecret)
 }
+
