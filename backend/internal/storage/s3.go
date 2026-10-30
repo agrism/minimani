@@ -139,3 +139,4 @@ func (s *S3Storage) ConvertAndUploadWebP(ctx context.Context, rawURL string) (st
 	publicURL := fmt.Sprintf("%s/%s", s.publicBase, objectKey)
 	return publicURL, nil
 }
+

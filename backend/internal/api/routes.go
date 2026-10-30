@@ -1,27 +1,33 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 
 	"minimani/backend/internal/auth"
-	"minimani/backend/internal/game"
-	"minimani/backend/internal/websocket"
 	db "minimani/backend/internal/db/sqlc"
+	"minimani/backend/internal/game"
+	"minimani/backend/internal/ss"
+	"minimani/backend/internal/storage"
+	"minimani/backend/internal/websocket"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Server struct {
 	router      *chi.Mux
+	pool        *pgxpool.Pool
 	hub         *websocket.Hub
 	queries     *db.Queries
 	authService *auth.AuthService
@@ -30,6 +36,7 @@ type Server struct {
 func NewServer(pool *pgxpool.Pool, queries *db.Queries, hub *websocket.Hub) *Server {
 	s := &Server{
 		router:      chi.NewRouter(),
+		pool:        pool,
 		hub:         hub,
 		queries:     queries,
 		authService: auth.NewAuthService(pool),
@@ -82,6 +89,33 @@ func (s *Server) setupRoutes() {
 
 	// API endpoints
 	r.Get("/api/rules", s.handleGetScoringRules)
+
+	// Admin / Background catalog importer
+	r.Post("/api/admin/import", func(w http.ResponseWriter, r *http.Request) {
+		countStr := r.URL.Query().Get("count")
+		target := 30
+		if c, err := strconv.Atoi(countStr); err == nil && c > 0 {
+			target = c
+		}
+		go func() {
+			importCtx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+			defer cancel()
+			_, _ = ss.ImportHomesCatalog(importCtx, s.pool, s.queries, storage.GlobalStorage, target)
+		}()
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"status": "started",
+			"target": target,
+		})
+	})
+
+	r.Get("/api/admin/stats", func(w http.ResponseWriter, r *http.Request) {
+		count, _ := s.queries.CountListings(r.Context())
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"listings_count": count,
+		})
+	})
 
 	r.Route("/api/auth", func(r chi.Router) {
 		r.Post("/register", s.handleRegister)

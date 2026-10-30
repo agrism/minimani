@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
-	"os"
 	"sync"
 	"time"
 
@@ -248,106 +248,106 @@ func (r *Room) StartGame(ctx context.Context) error {
 	r.BroadcastState()
 
 	go func() {
-		mediaDir := os.Getenv("MEDIA_DIR")
-		if mediaDir == "" {
-			mediaDir = "./media"
-		}
-
 		needed := r.QuestionCount
 		if needed <= 0 {
 			needed = 5
 		}
 
-		// 1. Try scraping fresh listings live from ss.lv (real-estate / homes)
-		scrapeCtx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
-		defer cancel()
-
 		var listings []RoundListing
-		scraped, err := ss.FetchLiveListings(scrapeCtx, mediaDir, needed, r.PlayedURLs)
-		if err == nil && len(scraped) > 0 {
-			for _, s := range scraped {
-				opts := ss.GeneratePriceOptions(s.Price)
-				optsJSON, _ := json.Marshal(opts)
-				packedDesc := ss.PackDescriptionWithParams(s.Description, s.Parameters)
 
-				dbListing, err := r.Queries.InsertListing(context.Background(), db.InsertListingParams{
-					Category:    "real_estate",
-					Title:       s.Title,
-					Description: pgtype.Text{String: packedDesc, Valid: true},
-					ImagePath:   s.ImageURL,
-					OriginalUrl: pgtype.Text{String: s.SourceURL, Valid: true},
-					ActualPrice: internaldb.NumericFromFloat(s.Price),
-					Currency:    "EUR",
-					Region:      pgtype.Text{String: s.Region, Valid: true},
-					Options:     optsJSON,
-				})
-
-				idStr := fmt.Sprintf("live_%d", time.Now().UnixNano())
-				if err == nil {
-					idStr = dbListing.ID.String()
+		// 1. PRIMĀRI: Nolasām nejaušus sludinājumus uzreiz no mūsu datubāzes (zibenīgs spēles starts!)
+		fetchLimit := int32(needed * 5)
+		if fetchLimit < 30 {
+			fetchLimit = 30
+		}
+		dbListings, err := r.Queries.GetRandomListings(context.Background(), db.GetRandomListingsParams{
+			Category: "all",
+			Limit:    fetchLimit,
+		})
+		if err == nil {
+			for _, l := range dbListings {
+				if len(listings) >= needed {
+					break
+				}
+				idStr := l.ID.String()
+				if r.PlayedIDs[idStr] {
+					continue // Nepieļaujam sludinājumu atkārtošanos spēles sesijā
 				}
 
-				r.PlayedURLs[s.SourceURL] = true
+				var opts []float64
+				if len(l.Options) > 0 {
+					_ = json.Unmarshal(l.Options, &opts)
+				}
+				actual := internaldb.FloatFromNumeric(l.ActualPrice)
+				if len(opts) == 0 {
+					opts = ss.GeneratePriceOptions(actual)
+				}
+
+				descText, params := ss.UnpackDescriptionWithParams(l.Description.String)
+
 				r.PlayedIDs[idStr] = true
+				_ = r.Queries.IncrementListingTimesPlayed(context.Background(), l.ID)
 
 				listings = append(listings, RoundListing{
 					ID:          idStr,
-					Category:    "real_estate",
-					Title:       s.Title,
-					Description: s.Description,
-					ImagePath:   s.ImageURL,
-					Region:      s.Region,
-					Parameters:  s.Parameters,
+					Category:    l.Category,
+					Title:       l.Title,
+					Description: descText,
+					ImagePath:   l.ImagePath,
+					Region:      l.Region.String,
+					Parameters:  params,
 					Options:     opts,
-					ActualPrice: s.Price,
+					ActualPrice: actual,
 				})
 			}
 		}
 
-		// 2. If needed more listings, fill remaining from database (excluding already played)
+		// 2. REZERVE: Tikai tad, ja datubāzē nav pietiekami sludinājumu, papildinām tieši no ss.lv
 		if len(listings) < needed {
-			fetchLimit := int32((needed - len(listings)) * 4)
-			if fetchLimit < 15 {
-				fetchLimit = 15
-			}
-			dbListings, err := r.Queries.GetRandomListings(context.Background(), db.GetRandomListingsParams{
-				Category: "all",
-				Limit:    fetchLimit,
-			})
-			if err == nil {
-				for _, l := range dbListings {
+			log.Printf("⚠️ Datubāzē trūkst sludinājumu (%d/%d), papildinām tieši no ss.lv...", len(listings), needed)
+			scrapeCtx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
+			defer cancel()
+
+			scraped, err := ss.FetchLiveListings(scrapeCtx, "", needed-len(listings), r.PlayedURLs)
+			if err == nil && len(scraped) > 0 {
+				for _, s := range scraped {
 					if len(listings) >= needed {
 						break
 					}
-					idStr := l.ID.String()
-					if r.PlayedIDs[idStr] {
-						continue // Don't repeat ads in consecutive games
+					opts := ss.GeneratePriceOptions(s.Price)
+					optsJSON, _ := json.Marshal(opts)
+					packedDesc := ss.PackDescriptionWithParams(s.Description, s.Parameters)
+
+					dbListing, err := r.Queries.InsertListing(context.Background(), db.InsertListingParams{
+						Category:    "real_estate",
+						Title:       s.Title,
+						Description: pgtype.Text{String: packedDesc, Valid: true},
+						ImagePath:   s.ImageURL,
+						OriginalUrl: pgtype.Text{String: s.SourceURL, Valid: true},
+						ActualPrice: internaldb.NumericFromFloat(s.Price),
+						Currency:    "EUR",
+						Region:      pgtype.Text{String: s.Region, Valid: true},
+						Options:     optsJSON,
+					})
+
+					idStr := fmt.Sprintf("live_%d", time.Now().UnixNano())
+					if err == nil {
+						idStr = dbListing.ID.String()
 					}
 
-					var opts []float64
-					if len(l.Options) > 0 {
-						_ = json.Unmarshal(l.Options, &opts)
-					}
-					actual := internaldb.FloatFromNumeric(l.ActualPrice)
-					if len(opts) == 0 {
-						opts = ss.GeneratePriceOptions(actual)
-					}
-
-					descText, params := ss.UnpackDescriptionWithParams(l.Description.String)
-
+					r.PlayedURLs[s.SourceURL] = true
 					r.PlayedIDs[idStr] = true
-					_ = r.Queries.IncrementListingTimesPlayed(context.Background(), l.ID)
 
 					listings = append(listings, RoundListing{
 						ID:          idStr,
-						Category:    l.Category,
-						Title:       l.Title,
-						Description: descText,
-						ImagePath:   l.ImagePath,
-						Region:      l.Region.String,
-						Parameters:  params,
+						Category:    "real_estate",
+						Title:       s.Title,
+						Description: s.Description,
+						ImagePath:   s.ImageURL,
+						Region:      s.Region,
+						Parameters:  s.Parameters,
 						Options:     opts,
-						ActualPrice: actual,
+						ActualPrice: s.Price,
 					})
 				}
 			}

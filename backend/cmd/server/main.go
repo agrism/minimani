@@ -14,6 +14,7 @@ import (
 
 	"minimani/backend/internal/api"
 	db "minimani/backend/internal/db/sqlc"
+	"minimani/backend/internal/ss"
 	"minimani/backend/internal/storage"
 	"minimani/backend/internal/websocket"
 )
@@ -51,6 +52,21 @@ func main() {
 	queries := db.New(pool)
 	hub := websocket.NewHub(queries)
 	server := api.NewServer(pool, queries, hub)
+
+	// Automātisks datubāzes kataloga fona papildinājums, ja sludinājumu ir par maz
+	go func() {
+		time.Sleep(2 * time.Second)
+		count, err := queries.CountListings(context.Background())
+		if err == nil {
+			log.Printf("📊 Datubāzē pašlaik ir %d aktīvi sludinājumi.\n", count)
+			if count < 50 {
+				log.Printf("⚡ Datubāzē ir tikai %d sludinājumi (< 50). Fonā ielādējam katalogu ar S3 WebP attēliem...\n", count)
+				importCtx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+				defer cancel()
+				_, _ = ss.ImportHomesCatalog(importCtx, pool, queries, storage.GlobalStorage, 50)
+			}
+		}
+	}()
 
 	httpServer := &http.Server{
 		Addr:         ":" + port,
