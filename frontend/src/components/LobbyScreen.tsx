@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, Users, Play, Crown, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Copy, Check, Users, Play, Crown, Sparkles, CheckCircle2, LogOut } from 'lucide-react';
 import { Room, Player } from '../types';
 
 interface LobbyScreenProps {
@@ -8,6 +8,7 @@ interface LobbyScreenProps {
   onVote: (questionCount: number, gameMode: string, category: string) => void;
   onSetReady: (ready: boolean) => void;
   onStartGame: () => void;
+  onLeave?: () => void;
 }
 
 export const LobbyScreen: React.FC<LobbyScreenProps> = ({
@@ -16,6 +17,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
   onVote,
   onSetReady,
   onStartGame,
+  onLeave,
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -204,6 +206,17 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
           >
             <Play className="w-4 h-4 fill-current" />
             Kā administrators sākt spēli tagad
+          </button>
+        )}
+
+        {onLeave && (
+          <button
+            type="button"
+            onClick={onLeave}
+            className="w-full py-2.5 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-rose-950/20 hover:border-rose-500/40 text-slate-400 hover:text-rose-300 text-xs font-semibold flex items-center justify-center gap-2 transition-all mt-1"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            Pamest istabu un izvēlēties citu
           </button>
         )}
       </div>

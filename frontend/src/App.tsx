@@ -256,6 +256,7 @@ export const App: React.FC = () => {
             onVote={handleVote}
             onSetReady={handleSetReady}
             onStartGame={handleStartGame}
+            onLeave={handleLeaveRoom}
           />
         )}
 
