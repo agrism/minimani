@@ -1,14 +1,26 @@
 import React from 'react';
-import { Tag, Users, LogOut, HelpCircle } from 'lucide-react';
+import { Tag, Users, LogOut, HelpCircle, User as UserIcon } from 'lucide-react';
+import { User } from '../types';
 
 interface HeaderProps {
   roomCode?: string;
   playerCount?: number;
+  currentUser?: User | null;
   onLeave?: () => void;
   onOpenRules?: () => void;
+  onOpenAuth?: () => void;
+  onLogout?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ roomCode, playerCount, onLeave, onOpenRules }) => {
+export const Header: React.FC<HeaderProps> = ({
+  roomCode,
+  playerCount,
+  currentUser,
+  onLeave,
+  onOpenRules,
+  onOpenAuth,
+  onLogout,
+}) => {
   return (
     <header className="w-full max-w-2xl mx-auto px-4 py-3 flex items-center justify-between border-b border-slate-800">
       <div
@@ -29,7 +41,7 @@ export const Header: React.FC<HeaderProps> = ({ roomCode, playerCount, onLeave, 
         </div>
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-2 sm:gap-2.5">
         {onOpenRules && (
           <button
             onClick={onOpenRules}
@@ -39,6 +51,35 @@ export const Header: React.FC<HeaderProps> = ({ roomCode, playerCount, onLeave, 
             <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden sm:inline">Noteikumi</span>
           </button>
+        )}
+
+        {/* Lietotāja profila vai Ienākšanas poga */}
+        {currentUser ? (
+          <div className="flex items-center gap-1.5 bg-slate-850 border border-slate-750 px-2.5 py-1.5 rounded-xl shadow-sm">
+            <span className="text-base">{currentUser.avatar}</span>
+            <span className="text-xs font-bold text-slate-200 hidden sm:inline max-w-[100px] truncate">
+              {currentUser.nickname}
+            </span>
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="text-[10px] text-slate-400 hover:text-rose-400 font-bold ml-1 border-l border-slate-700 pl-1.5 transition-colors"
+                title="Iziet no profila (spēlēt kā viesim)"
+              >
+                Iziet
+              </button>
+            )}
+          </div>
+        ) : (
+          onOpenAuth && (
+            <button
+              onClick={onOpenAuth}
+              className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2.5 py-1.5 rounded-xl font-bold transition-all shadow-sm active:scale-95"
+            >
+              <UserIcon className="w-3.5 h-3.5" />
+              <span>Ienākt</span>
+            </button>
+          )
         )}
 
         {roomCode && (
@@ -61,7 +102,7 @@ export const Header: React.FC<HeaderProps> = ({ roomCode, playerCount, onLeave, 
             title="Pamest istabu un izvēlēties citu"
           >
             <LogOut className="w-3.5 h-3.5" />
-            <span>Iziet</span>
+            <span>Pamest</span>
           </button>
         )}
       </div>

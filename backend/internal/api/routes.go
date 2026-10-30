@@ -13,22 +13,26 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 
+	"minimani/backend/internal/auth"
 	"minimani/backend/internal/game"
 	"minimani/backend/internal/websocket"
 	db "minimani/backend/internal/db/sqlc"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Server struct {
-	router  *chi.Mux
-	hub     *websocket.Hub
-	queries *db.Queries
+	router      *chi.Mux
+	hub         *websocket.Hub
+	queries     *db.Queries
+	authService *auth.AuthService
 }
 
-func NewServer(queries *db.Queries, hub *websocket.Hub) *Server {
+func NewServer(pool *pgxpool.Pool, queries *db.Queries, hub *websocket.Hub) *Server {
 	s := &Server{
-		router:  chi.NewRouter(),
-		hub:     hub,
-		queries: queries,
+		router:      chi.NewRouter(),
+		hub:         hub,
+		queries:     queries,
+		authService: auth.NewAuthService(pool),
 	}
 	s.setupRoutes()
 	return s
@@ -78,6 +82,12 @@ func (s *Server) setupRoutes() {
 
 	// API endpoints
 	r.Get("/api/rules", s.handleGetScoringRules)
+
+	r.Route("/api/auth", func(r chi.Router) {
+		r.Post("/register", s.handleRegister)
+		r.Post("/login", s.handleLogin)
+		r.Get("/me", s.handleGetMe)
+	})
 
 	r.Route("/api/rooms", func(r chi.Router) {
 		r.Post("/create", s.handleCreateRoom)
@@ -206,6 +216,98 @@ func (s *Server) handleGetRoom(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(room)
+}
+
+type RegisterRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Nickname string `json:"nickname"`
+	Avatar   string `json:"avatar"`
+}
+
+func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
+	var req RegisterRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Nederīgi pieprasījuma dati"})
+		return
+	}
+
+	user, token, err := s.authService.Register(r.Context(), req.Email, req.Password, req.Nickname, req.Avatar)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"token": token,
+		"user":  user,
+	})
+}
+
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
+	var req LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Nederīgi pieprasījuma dati"})
+		return
+	}
+
+	user, token, err := s.authService.Login(r.Context(), req.Email, req.Password)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"token": token,
+		"user":  user,
+	})
+}
+
+func (s *Server) handleGetMe(w http.ResponseWriter, r *http.Request) {
+	authHeader := r.Header.Get("Authorization")
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Nav autorizēts"})
+		return
+	}
+	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+
+	userID, err := s.authService.VerifyToken(tokenStr)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Nederīga sesija"})
+		return
+	}
+
+	user, err := s.authService.GetUserByID(r.Context(), userID)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Lietotājs nav atrasts"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"user": user,
+	})
 }
 
 func fileServer(r chi.Router, path string, root http.FileSystem) {

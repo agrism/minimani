@@ -5,6 +5,17 @@ export interface ParameterItem {
   value: string;
 }
 
+export interface User {
+  id: string;
+  email: string;
+  nickname: string;
+  avatar: string;
+  games_played: number;
+  games_won: number;
+  total_score: number;
+  created_at: string;
+}
+
 export interface Player {
   id: string;
   nickname: string;

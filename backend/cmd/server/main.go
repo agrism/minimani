@@ -44,7 +44,7 @@ func main() {
 
 	queries := db.New(pool)
 	hub := websocket.NewHub(queries)
-	server := api.NewServer(queries, hub)
+	server := api.NewServer(pool, queries, hub)
 
 	httpServer := &http.Server{
 		Addr:         ":" + port,

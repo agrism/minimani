@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Zap, Plus, Users, Lock, Globe, Sparkles, HelpCircle } from 'lucide-react';
-import { PublicRoomItem } from '../types';
+import { Play, Zap, Plus, Users, Lock, Globe, Sparkles, HelpCircle, CheckCircle2 } from 'lucide-react';
+import { PublicRoomItem, User } from '../types';
 
 interface HomeScreenProps {
   nickname: string;
   avatar: string;
+  currentUser?: User | null;
   onUpdateProfile: (name: string, avatar: string) => void;
   onCreateRoom: (isPublic: boolean, category: string, gameMode: string) => void;
   onJoinRoom: (code: string) => void;
   onQuickJoin: () => void;
   onOpenRules?: () => void;
+  onOpenAuth?: () => void;
 }
 
 const AVATARS = ['🚗', '🏎️', '🚜', '🏡', '💎', '📱', '🔨', '🍻', '🌲', '👑', '🚀', '🔥'];
@@ -17,11 +19,13 @@ const AVATARS = ['🚗', '🏎️', '🚜', '🏡', '💎', '📱', '🔨', '�
 export const HomeScreen: React.FC<HomeScreenProps> = ({
   nickname,
   avatar,
+  currentUser,
   onUpdateProfile,
   onCreateRoom,
   onJoinRoom,
   onQuickJoin,
   onOpenRules,
+  onOpenAuth,
 }) => {
   const [code, setCode] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -64,9 +68,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     <div className="w-full max-w-md mx-auto px-4 py-6 space-y-6">
       {/* Profila kartīte */}
       <div className="bg-slate-800/80 backdrop-blur border border-slate-700/80 rounded-2xl p-4 shadow-xl">
-        <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">
-          Tavs spēlētāja profils
-        </label>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Tavs spēlētāja profils
+          </label>
+          {currentUser ? (
+            <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" /> Konts: {currentUser.email}
+            </span>
+          ) : (
+            onOpenAuth && (
+              <button
+                type="button"
+                onClick={onOpenAuth}
+                className="text-[11px] font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2.5 py-0.5 rounded-full transition-colors flex items-center gap-1 active:scale-95"
+              >
+                <span>Viesis · Reģistrēties</span>
+              </button>
+            )
+          )}
+        </div>
         <div className="flex items-center gap-3">
           <button
             type="button"

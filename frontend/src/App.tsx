@@ -6,13 +6,17 @@ import { GameScreen } from './components/GameScreen';
 import { RevealScreen } from './components/RevealScreen';
 import { PodiumScreen } from './components/PodiumScreen';
 import { RulesModal } from './components/RulesModal';
-import { Room } from './types';
+import { AuthModal } from './components/AuthModal';
+import { Room, User } from './types';
 
 export const App: React.FC = () => {
-  const [playerId] = useState<string>(() => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [showAuth, setShowAuth] = useState(false);
+
+  const [playerId, setPlayerId] = useState<string>(() => {
     let id = localStorage.getItem('minimani_player_id');
     if (!id) {
-      id = 'p_' + Math.random().toString(36).substring(2, 9);
+      id = 'guest_' + Math.random().toString(36).substring(2, 9);
       localStorage.setItem('minimani_player_id', id);
     }
     return id;
@@ -30,6 +34,47 @@ export const App: React.FC = () => {
   const [isStarting, setIsStarting] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
+
+  // Auto-login from stored token
+  useEffect(() => {
+    const token = localStorage.getItem('minimani_auth_token');
+    if (token) {
+      fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.user) {
+            setCurrentUser(data.user);
+            setNickname(data.user.nickname);
+            setAvatar(data.user.avatar);
+            setPlayerId('user_' + data.user.id);
+          } else {
+            localStorage.removeItem('minimani_auth_token');
+          }
+        })
+        .catch(() => {
+          // ignore
+        });
+    }
+  }, []);
+
+  const handleAuthSuccess = (user: User) => {
+    setCurrentUser(user);
+    setNickname(user.nickname);
+    setAvatar(user.avatar);
+    setPlayerId('user_' + user.id);
+    localStorage.setItem('minimani_nickname', user.nickname);
+    localStorage.setItem('minimani_avatar', user.avatar);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('minimani_auth_token');
+    setCurrentUser(null);
+    const guestId = 'guest_' + Math.random().toString(36).substring(2, 9);
+    setPlayerId(guestId);
+    localStorage.setItem('minimani_player_id', guestId);
+  };
 
   // Update profile
   const handleUpdateProfile = (name: string, av: string) => {
@@ -219,8 +264,11 @@ export const App: React.FC = () => {
       <Header
         roomCode={room?.code}
         playerCount={room ? Object.keys(room.players || {}).length : undefined}
+        currentUser={currentUser}
         onLeave={room ? handleLeaveRoom : undefined}
         onOpenRules={() => setShowRules(true)}
+        onOpenAuth={() => setShowAuth(true)}
+        onLogout={handleLogout}
       />
 
       <main className="flex-1 flex flex-col justify-center">
@@ -229,11 +277,13 @@ export const App: React.FC = () => {
           <HomeScreen
             nickname={nickname}
             avatar={avatar}
+            currentUser={currentUser}
             onUpdateProfile={handleUpdateProfile}
             onCreateRoom={handleCreateRoom}
             onJoinRoom={handleJoinRoom}
             onQuickJoin={handleQuickJoin}
             onOpenRules={() => setShowRules(true)}
+            onOpenAuth={() => setShowAuth(true)}
           />
         )}
 
@@ -336,6 +386,13 @@ export const App: React.FC = () => {
 
       {/* Informatīvais punktu aprēķina logs */}
       <RulesModal isOpen={showRules} onClose={() => setShowRules(false)} />
+
+      {/* Lietotāja reģistrācijas un ielogošanās logs */}
+      <AuthModal
+        isOpen={showAuth}
+        onClose={() => setShowAuth(false)}
+        onAuthSuccess={handleAuthSuccess}
+      />
     </div>
   );
 };
