@@ -16,7 +16,7 @@ export const Header: React.FC<HeaderProps> = ({ roomCode, playerCount, onLeave }
         </div>
         <div>
           <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
-            MiniCenu
+            MiniMani
           </span>
           <span className="text-xs ml-1.5 px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-medium">
             ss.lv

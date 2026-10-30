@@ -55,7 +55,7 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("🚀 MiniCenu backend serveris startēts uz http://localhost:%s\n", port)
+		log.Printf("🚀 MiniMani backend serveris startēts uz http://localhost:%s\n", port)
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Servera kļūda: %v", err)
 		}

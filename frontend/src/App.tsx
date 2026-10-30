@@ -277,7 +277,7 @@ export const App: React.FC = () => {
       </main>
 
       <footer className="py-3 text-center text-[11px] text-slate-600 border-t border-slate-900">
-        MiniCenu spēle · Sludinājumu dati no ss.lv · Ražots Latvijā
+        MiniMani spēle · Sludinājumu dati no ss.lv · Ražots Latvijā
       </footer>
     </div>
   );

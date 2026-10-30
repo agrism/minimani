@@ -1,4 +1,4 @@
-# "MiniCenu" Spēles Izstrādes Plāns — Daudzspēlētāju Ballīšu & Atvērto Istabu Režīms
+# "MiniMani" Spēles Izstrādes Plāns — Daudzspēlētāju Ballīšu & Atvērto Istabu Režīms
 
 > **Dokuments:** Izstrādes plāns un progresa ceļvedis  
 > **Galvenais fokuss:** Daudzspēlētāju kompānijas spēle 2+ spēlētājiem (*Kahoot / Jackbox* stils) gan **privātās istabās** ar draugiem, gan **atvērtās publiskās istabās**.  

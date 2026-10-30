@@ -1,6 +1,6 @@
-# MiniCenu 🏷️
+# MiniMani 🏷️
 
-> **"MiniCenu"** ir reāllaika daudzspēlētāju cenu minēšanas spēle (*Kahoot / Jackbox* stils) ar sludinājumiem ekskluzīvi no **ss.lv**.
+> **"MiniMani"** ir reāllaika daudzspēlētāju cenu minēšanas spēle (*Kahoot / Jackbox* stils) ar sludinājumiem ekskluzīvi no **ss.lv**.
 
 Spēle ir mobilajām ierīcēm pielāgota tīmekļa lietotne latviešu valodā, kurā var spēlēt gan privātās istabās ar draugiem (izmantojot 4-burtu kodu vai saiti), gan pievienoties atvērtajām publiskajām spēlēm ar funkciju **"Ātrā spēle"**.
 
@@ -83,3 +83,4 @@ cp .env.example .env
 # Iestatiet DOMAIN un ACME_EMAIL iekš .env
 docker compose -f docker-compose.prod.yml up -d --build
 ```
+

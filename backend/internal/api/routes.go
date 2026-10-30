@@ -61,7 +61,7 @@ func (s *Server) setupRoutes() {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]string{
 			"status": "ok",
-			"app":    "MiniCenu Backend",
+			"app":    "MiniMani Backend",
 		})
 	})
 
