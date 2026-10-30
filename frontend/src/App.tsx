@@ -233,6 +233,37 @@ export const App: React.FC = () => {
           />
         )}
 
+        {/* Ielādes ekrāns - svaigu ss.lv sludinājumu lejuplāde */}
+        {room && room.status === 'loading' && (
+          <div className="flex flex-col items-center justify-center p-8 space-y-6 text-center max-w-md mx-auto">
+            <div className="relative w-24 h-24 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-4 border-amber-500/20 animate-ping"></div>
+              <div className="w-24 h-24 rounded-full border-4 border-amber-500 border-t-transparent animate-spin"></div>
+              <span className="absolute text-3xl">🏡</span>
+            </div>
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-amber-400 uppercase tracking-widest px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-full inline-block">
+                Svaigi dati no ss.lv
+              </span>
+              <h2 className="text-2xl font-black text-slate-100">
+                Ielādējam jaunākos sludinājumus...
+              </h2>
+              <p className="text-slate-400 text-sm leading-relaxed">
+                Meklējam aktuālās mājas un īpašumus, sagatavojam fotogrāfijas un parametru tabulu...
+              </p>
+            </div>
+            <div className="w-full bg-slate-800/80 border border-slate-700/60 p-4 rounded-2xl space-y-2.5">
+              <div className="flex items-center justify-between text-xs text-slate-300 font-semibold">
+                <span>Lejupielādējam ss.lv datus...</span>
+                <span className="text-amber-400 animate-pulse">Lūdzu, uzgaidiet</span>
+              </div>
+              <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden">
+                <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-400 h-full w-3/4 animate-pulse rounded-full" />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 3 sekunžu starta atskaite */}
         {room && isStarting && (
           <div className="flex flex-col items-center justify-center p-8 space-y-4 text-center">

@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"os"
 	"sync"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 
 	internaldb "minimani/backend/internal/db"
 	db "minimani/backend/internal/db/sqlc"
@@ -17,6 +20,7 @@ type RoomStatus string
 
 const (
 	StatusLobby       RoomStatus = "lobby"
+	StatusLoading     RoomStatus = "loading"
 	StatusStarting    RoomStatus = "starting"
 	StatusRoundActive RoomStatus = "round_active"
 	StatusRoundReveal RoomStatus = "round_reveal"
@@ -40,14 +44,15 @@ type VoteSummary struct {
 }
 
 type RoundListing struct {
-	ID          string    `json:"id"`
-	Category    string    `json:"category"`
-	Title       string    `json:"title"`
-	Description string    `json:"description"`
-	ImagePath   string    `json:"image_path"`
-	Region      string    `json:"region"`
-	Options     []float64 `json:"options,omitempty"` // 4 choices for multiple_choice mode
-	ActualPrice float64   `json:"actual_price,omitempty"` // ONLY present in round_reveal
+	ID          string             `json:"id"`
+	Category    string             `json:"category"`
+	Title       string             `json:"title"`
+	Description string             `json:"description"`
+	ImagePath   string             `json:"image_path"`
+	Region      string             `json:"region"`
+	Parameters  []ss.ParameterItem `json:"parameters,omitempty"`
+	Options     []float64          `json:"options,omitempty"` // 4 choices for multiple_choice mode
+	ActualPrice float64            `json:"actual_price,omitempty"` // ONLY present in round_reveal
 }
 
 type PlayerGuessResult struct {
@@ -220,57 +225,129 @@ func (r *Room) SetReady(playerID string, ready bool) bool {
 	return false
 }
 
-// StartGame loads listings from database and starts round 1
+// StartGame sets status to loading, scrapes fresh ads live from ss.lv, falls back to DB, and starts round 1
 func (r *Room) StartGame(ctx context.Context) error {
 	r.mu.Lock()
-
-	// Load random listings
-	dbListings, err := r.Queries.GetRandomListings(ctx, db.GetRandomListingsParams{
-		Category: r.Category,
-		Limit:    int32(r.QuestionCount),
-	})
-	if err != nil {
+	if r.Status != StatusLobby && r.Status != StatusGameOver {
 		r.mu.Unlock()
-		return fmt.Errorf("failed to fetch listings: %w", err)
+		return fmt.Errorf("room is already active")
 	}
 
-	if len(dbListings) == 0 {
-		r.mu.Unlock()
-		return fmt.Errorf("nav pieejamu sludinājumu šajā kategorijā")
-	}
-
-	r.Listings = make([]RoundListing, 0, len(dbListings))
-	for _, l := range dbListings {
-		var opts []float64
-		if len(l.Options) > 0 {
-			_ = json.Unmarshal(l.Options, &opts)
-		}
-		actual := internaldb.FloatFromNumeric(l.ActualPrice)
-		if len(opts) == 0 {
-			opts = ss.GeneratePriceOptions(actual)
-		}
-
-		r.Listings = append(r.Listings, RoundListing{
-			ID:          l.ID.String(),
-			Category:    l.Category,
-			Title:       l.Title,
-			Description: l.Description.String,
-			ImagePath:   l.ImagePath,
-			Region:      l.Region.String,
-			Options:     opts,
-			ActualPrice: actual,
-		})
-	}
-
-	r.QuestionCount = len(r.Listings)
+	r.Status = StatusLoading
 	r.CurrentRound = 0
-	r.Status = StatusStarting
+	r.Listings = nil
+	r.CurrentListing = nil
+	r.RoundGuesses = make(map[string]PlayerGuessResult)
 	r.mu.Unlock()
 
 	r.BroadcastState()
 
-	// 3-second countdown before round 1
 	go func() {
+		mediaDir := os.Getenv("MEDIA_DIR")
+		if mediaDir == "" {
+			mediaDir = "./media"
+		}
+
+		needed := r.QuestionCount
+		if needed <= 0 {
+			needed = 5
+		}
+
+		// 1. Try scraping fresh listings live from ss.lv (real-estate / homes)
+		scrapeCtx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
+		defer cancel()
+
+		var listings []RoundListing
+		scraped, err := ss.FetchLiveListings(scrapeCtx, mediaDir, needed)
+		if err == nil && len(scraped) > 0 {
+			for _, s := range scraped {
+				opts := ss.GeneratePriceOptions(s.Price)
+				optsJSON, _ := json.Marshal(opts)
+				packedDesc := ss.PackDescriptionWithParams(s.Description, s.Parameters)
+
+				dbListing, err := r.Queries.InsertListing(context.Background(), db.InsertListingParams{
+					Category:    "real_estate",
+					Title:       s.Title,
+					Description: pgtype.Text{String: packedDesc, Valid: true},
+					ImagePath:   s.ImageURL,
+					OriginalUrl: pgtype.Text{String: s.SourceURL, Valid: true},
+					ActualPrice: internaldb.NumericFromFloat(s.Price),
+					Currency:    "EUR",
+					Region:      pgtype.Text{String: s.Region, Valid: true},
+					Options:     optsJSON,
+				})
+
+				idStr := fmt.Sprintf("live_%d", time.Now().UnixNano())
+				if err == nil {
+					idStr = dbListing.ID.String()
+				}
+
+				listings = append(listings, RoundListing{
+					ID:          idStr,
+					Category:    "real_estate",
+					Title:       s.Title,
+					Description: s.Description,
+					ImagePath:   s.ImageURL,
+					Region:      s.Region,
+					Parameters:  s.Parameters,
+					Options:     opts,
+					ActualPrice: s.Price,
+				})
+			}
+		}
+
+		// 2. If needed more listings, fill remaining from database
+		if len(listings) < needed {
+			dbListings, err := r.Queries.GetRandomListings(context.Background(), db.GetRandomListingsParams{
+				Category: "all",
+				Limit:    int32(needed - len(listings)),
+			})
+			if err == nil {
+				for _, l := range dbListings {
+					var opts []float64
+					if len(l.Options) > 0 {
+						_ = json.Unmarshal(l.Options, &opts)
+					}
+					actual := internaldb.FloatFromNumeric(l.ActualPrice)
+					if len(opts) == 0 {
+						opts = ss.GeneratePriceOptions(actual)
+					}
+
+					descText, params := ss.UnpackDescriptionWithParams(l.Description.String)
+
+					listings = append(listings, RoundListing{
+						ID:          l.ID.String(),
+						Category:    l.Category,
+						Title:       l.Title,
+						Description: descText,
+						ImagePath:   l.ImagePath,
+						Region:      l.Region.String,
+						Parameters:  params,
+						Options:     opts,
+						ActualPrice: actual,
+					})
+				}
+			}
+		}
+
+		if len(listings) == 0 {
+			r.mu.Lock()
+			r.Status = StatusLobby
+			r.mu.Unlock()
+			r.BroadcastState()
+			return
+		}
+
+		r.mu.Lock()
+		r.Listings = listings
+		r.QuestionCount = len(r.Listings)
+		r.CurrentRound = 0
+		r.Status = StatusStarting
+		r.mu.Unlock()
+
+		r.BroadcastState()
+
+		// 3-second countdown before round 1
 		time.Sleep(3 * time.Second)
 		r.NextRound()
 	}()
@@ -300,6 +377,7 @@ func (r *Room) NextRound() {
 		Description: listing.Description,
 		ImagePath:   listing.ImagePath,
 		Region:      listing.Region,
+		Parameters:  listing.Parameters,
 	}
 
 	// Spēles režīms šobrīd vienmēr ir 4 atbilžu varianti

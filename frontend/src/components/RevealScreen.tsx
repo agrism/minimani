@@ -47,6 +47,31 @@ export const RevealScreen: React.FC<RevealScreenProps> = ({
         </p>
       </div>
 
+      {/* Sludinājuma kopsavilkums */}
+      {listing && (
+        <div className="bg-slate-800/80 border border-slate-700/80 rounded-2xl overflow-hidden flex items-center gap-3 p-3">
+          <img
+            src={listing.image_path}
+            alt={listing.title}
+            className="w-20 h-20 rounded-xl object-cover shrink-0 bg-slate-900 border border-slate-750"
+          />
+          <div className="flex-1 min-w-0">
+            <h4 className="text-xs font-bold text-slate-200 truncate">{listing.title}</h4>
+            {listing.parameters && listing.parameters.length > 0 ? (
+              <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[11px] mt-1">
+                {listing.parameters.slice(0, 4).map((p, i) => (
+                  <div key={i} className="truncate text-slate-400">
+                    <span className="opacity-70">{p.label}:</span> <span className="font-semibold text-slate-200">{p.value}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              listing.region && <p className="text-[11px] text-emerald-400 mt-1">{listing.region}</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Šī raunda minējumi */}
       <div className="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 space-y-3">
         <div className="flex items-center justify-between">

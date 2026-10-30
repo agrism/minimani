@@ -1,4 +1,9 @@
-export type RoomStatus = 'lobby' | 'starting' | 'round_active' | 'round_reveal' | 'game_over';
+export type RoomStatus = 'lobby' | 'loading' | 'starting' | 'round_active' | 'round_reveal' | 'game_over';
+
+export interface ParameterItem {
+  label: string;
+  value: string;
+}
 
 export interface Player {
   id: string;
@@ -17,6 +22,7 @@ export interface RoundListing {
   description: string;
   image_path: string;
   region: string;
+  parameters?: ParameterItem[];
   options?: number[];
   actual_price?: number;
 }

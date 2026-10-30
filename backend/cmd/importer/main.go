@@ -95,11 +95,12 @@ func scrapeLiveFromSS(ctx context.Context, queries *db.Queries, limitPerCat int)
 			}
 
 			optionsJSON := ss.GenerateOptionsJSON(ad.Price)
+			packedDesc := ss.PackDescriptionWithParams(ad.Description, ad.Parameters)
 
 			_, err = queries.InsertListing(ctx, db.InsertListingParams{
 				Category:    cat.ID,
 				Title:       ad.Title,
-				Description: pgtype.Text{String: ad.Description, Valid: ad.Description != ""},
+				Description: pgtype.Text{String: packedDesc, Valid: true},
 				ImagePath:   localImagePath,
 				OriginalUrl: pgtype.Text{String: ad.SourceURL, Valid: true},
 				ActualPrice: internaldb.NumericFromFloat(ad.Price),

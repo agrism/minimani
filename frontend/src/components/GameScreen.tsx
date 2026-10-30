@@ -120,14 +120,35 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           </button>
         </div>
 
-        {/* Teksts */}
-        <div className="p-4 space-y-2">
-          <h2 className="font-extrabold text-slate-100 text-base leading-snug">
+        {/* Teksts un Parametri */}
+        <div className="p-4 space-y-3">
+          <h2 className="font-extrabold text-slate-100 text-sm sm:text-base leading-snug">
             {listing.title}
           </h2>
-          <p className="text-xs text-slate-300 leading-relaxed line-clamp-3">
-            {listing.description}
-          </p>
+
+          {/* Sludinājuma parametru tabula no ss.lv */}
+          {listing.parameters && listing.parameters.length > 0 ? (
+            <div className="bg-slate-900/90 rounded-xl p-3 border border-slate-750 divide-y divide-slate-800 shadow-inner">
+              {listing.parameters.map((param, idx) => (
+                <div key={idx} className="py-1.5 flex items-start justify-between text-xs gap-3">
+                  <span className="text-slate-400 font-medium shrink-0">{param.label}:</span>
+                  <span className="text-slate-100 font-bold text-right">{param.value}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            listing.description && (
+              <p className="text-xs text-slate-300 leading-relaxed line-clamp-3">
+                {listing.description}
+              </p>
+            )
+          )}
+
+          {listing.parameters && listing.parameters.length > 0 && listing.description && (
+            <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2 italic">
+              "{listing.description}"
+            </p>
+          )}
         </div>
       </div>
 

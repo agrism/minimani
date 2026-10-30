@@ -1,6 +1,8 @@
 package ss
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,6 +12,16 @@ import (
 	"time"
 )
 
+type ParameterItem struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+}
+
+type StoredListingDetails struct {
+	Desc   string          `json:"desc"`
+	Params []ParameterItem `json:"params"`
+}
+
 type ScrapedListing struct {
 	Title       string
 	Description string
@@ -17,6 +29,64 @@ type ScrapedListing struct {
 	Region      string
 	ImageURL    string
 	SourceURL   string
+	Parameters  []ParameterItem
+}
+
+// PackDescriptionWithParams serializes description and parameters to JSON for storage
+func PackDescriptionWithParams(desc string, params []ParameterItem) string {
+	details := StoredListingDetails{
+		Desc:   desc,
+		Params: params,
+	}
+	b, err := json.Marshal(details)
+	if err != nil {
+		return desc
+	}
+	return string(b)
+}
+
+// UnpackDescriptionWithParams decodes description and parameters from stored string
+func UnpackDescriptionWithParams(raw string) (string, []ParameterItem) {
+	raw = strings.TrimSpace(raw)
+	if strings.HasPrefix(raw, "{") {
+		var details StoredListingDetails
+		if err := json.Unmarshal([]byte(raw), &details); err == nil && len(details.Params) > 0 {
+			return details.Desc, details.Params
+		}
+	}
+	return raw, nil
+}
+
+// ExtractParameters extracts the key-value attributes from the options_list table
+func ExtractParameters(htmlContent string) []ParameterItem {
+	var params []ParameterItem
+
+	optRegex := regexp.MustCompile(`(?s)<td[^>]*class=["']ads_opt_name[^"']*["'][^>]*>(.*?)</td>\s*<td[^>]*class=["']ads_opt[^"']*["'][^>]*>(.*?)</td>`)
+	matches := optRegex.FindAllStringSubmatch(htmlContent, -1)
+
+	for _, m := range matches {
+		label := cleanHTML(m[1])
+		label = strings.TrimSuffix(label, ":")
+		label = strings.TrimSpace(label)
+
+		val := cleanHTML(m[2])
+		val = strings.ReplaceAll(val, "[Karte]", "")
+		val = strings.TrimSpace(val)
+
+		// Never leak price!
+		lowerLabel := strings.ToLower(label)
+		if strings.Contains(lowerLabel, "cena") || strings.Contains(lowerLabel, "price") || strings.Contains(lowerLabel, "vērtība") {
+			continue
+		}
+
+		if label != "" && val != "" {
+			params = append(params, ParameterItem{
+				Label: label,
+				Value: val,
+			})
+		}
+	}
+	return params
 }
 
 // ScrapeSSAd parses an ss.lv advertisement URL and extracts metadata
@@ -105,17 +175,28 @@ func ScrapeSSAd(urlStr string) (*ScrapedListing, error) {
 		}
 	}
 
-	// 5. Extract Region / City
+	// 5. Extract Table Parameters (Platība, Istabas, Stāvu skaits, Zemes platība, etc.)
+	listing.Parameters = ExtractParameters(htmlContent)
+
+	// 6. Extract Region / City
 	regionRegex := regexp.MustCompile(`(?:Vieta|Pilsēta|Rajons)[:\s]*<[^>]*>([^<]+)<`)
 	if matches := regionRegex.FindStringSubmatch(htmlContent); len(matches) > 1 {
 		listing.Region = cleanHTML(matches[1])
+	}
+	if listing.Region == "" || listing.Region == "Latvija" {
+		for _, p := range listing.Parameters {
+			if p.Label == "Pilsēta" || p.Label == "Pilsēta/pagasts" || p.Label == "Rajons" {
+				listing.Region = p.Value
+				break
+			}
+		}
 	}
 	if listing.Region == "" {
 		listing.Region = "Latvija"
 	}
 
 	if listing.Title == "" {
-		listing.Title = "ss.lv sludinājums"
+		listing.Title = "Mājas, vasarnīcas"
 	}
 	// Sanitize title and description to remove price spoilers
 	listing.Title = SanitizeListingText(listing.Title)
@@ -188,4 +269,65 @@ func cleanHTML(s string) string {
 	s = strings.ReplaceAll(s, "\t", " ")
 	s = regexp.MustCompile(`\s+`).ReplaceAllString(s, " ")
 	return strings.TrimSpace(s)
+}
+
+// FetchLiveListings crawls ss.lv live for real-estate homes and returns scraped listings with local image paths
+func FetchLiveListings(ctx context.Context, mediaDir string, count int) ([]ScrapedListing, error) {
+	urls := []string{
+		"https://www.ss.lv/lv/real-estate/homes-summer-residences/today/",
+		"https://www.ss.lv/lv/real-estate/homes-summer-residences/",
+		"https://www.ss.lv/lv/real-estate/flats/today/",
+	}
+
+	var allLinks []string
+	seen := make(map[string]bool)
+
+	for _, u := range urls {
+		links, err := FetchCategoryAdLinks(u, count+5)
+		if err == nil {
+			for _, l := range links {
+				if !seen[l] {
+					seen[l] = true
+					allLinks = append(allLinks, l)
+				}
+			}
+		}
+		if len(allLinks) >= count*2 {
+			break
+		}
+	}
+
+	if len(allLinks) == 0 {
+		return nil, fmt.Errorf("neizdevās atrast sludinājumu saites ss.lv")
+	}
+
+	var results []ScrapedListing
+	for _, link := range allLinks {
+		if ctx.Err() != nil {
+			break
+		}
+		ad, err := ScrapeSSAd(link)
+		if err != nil || ad.Price <= 0 || ad.ImageURL == "" {
+			continue
+		}
+
+		// Download real image
+		localPath, err := DownloadAndSaveImage(mediaDir, ad.ImageURL)
+		if err != nil {
+			localPath = ad.ImageURL
+		}
+		ad.ImageURL = localPath
+
+		results = append(results, *ad)
+		if len(results) >= count {
+			break
+		}
+		time.Sleep(150 * time.Millisecond) // Respectful crawl delay
+	}
+
+	if len(results) == 0 {
+		return nil, fmt.Errorf("neizdevās nolasīt derīgus sludinājumus")
+	}
+
+	return results, nil
 }
