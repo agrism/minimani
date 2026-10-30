@@ -23,6 +23,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 }) => {
   const [code, setCode] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [isPublic, setIsPublic] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedMode, setSelectedMode] = useState('exact');
@@ -65,26 +66,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           Tavs spēlētāja profils
         </label>
         <div className="flex items-center gap-3">
-          <div className="relative group">
-            <button
-              type="button"
-              className="w-14 h-14 rounded-2xl bg-slate-700 flex items-center justify-center text-3xl border-2 border-amber-500/50 hover:border-amber-400 transition-all shadow-inner"
-              title="Mainīt avataru"
-            >
-              {avatar}
-            </button>
-            <div className="absolute top-16 left-0 z-20 hidden group-hover:flex group-focus-within:flex flex-wrap gap-1.5 p-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-48">
-              {AVATARS.map((a) => (
-                <button
-                  key={a}
-                  onClick={() => onUpdateProfile(nickname, a)}
-                  className="w-9 h-9 rounded-lg hover:bg-slate-800 text-xl flex items-center justify-center transition-colors"
-                >
-                  {a}
-                </button>
-              ))}
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+            className="w-14 h-14 rounded-2xl bg-slate-700/80 hover:bg-slate-700 flex items-center justify-center text-3xl border-2 border-amber-500/50 hover:border-amber-400 transition-all shadow-inner relative group shrink-0 active:scale-95"
+            title="Nospied, lai mainītu avataru"
+          >
+            {avatar}
+            <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black flex items-center justify-center shadow">
+              ✎
+            </span>
+          </button>
           <div className="flex-1">
             <input
               type="text"
@@ -96,6 +88,43 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             />
           </div>
         </div>
+
+        {/* Atveramais avataru panelis (nekad nepārklāj pogas) */}
+        {showAvatarPicker && (
+          <div className="mt-3 pt-3 border-t border-slate-700/70">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
+                Izvēlies savu tēlu:
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowAvatarPicker(false)}
+                className="text-[11px] text-amber-400 font-bold hover:underline"
+              >
+                Aizvērt ✕
+              </button>
+            </div>
+            <div className="grid grid-cols-6 gap-2">
+              {AVATARS.map((a) => (
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => {
+                    onUpdateProfile(nickname, a);
+                    setShowAvatarPicker(false);
+                  }}
+                  className={`w-11 h-11 rounded-xl text-2xl flex items-center justify-center transition-all ${
+                    avatar === a
+                      ? 'bg-amber-500/20 border-2 border-amber-400 scale-105 shadow-md shadow-amber-500/20'
+                      : 'bg-slate-900 border border-slate-700 hover:bg-slate-750 active:scale-95'
+                  }`}
+                >
+                  {a}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Galvenās pogas */}
