@@ -98,7 +98,7 @@ func NewRoom(code, hostID string, isPublic bool, queries *db.Queries, broadcast 
 		HostID:        hostID,
 		IsPublic:      isPublic,
 		Category:      "all",
-		GameMode:      "exact",
+		GameMode:      "multiple_choice",
 		QuestionCount: 10,
 		TimeLimitSec:  45,
 		MaxPlayers:    8,
@@ -302,19 +302,12 @@ func (r *Room) NextRound() {
 		Region:      listing.Region,
 	}
 
-	// Determine round mode (if mix, alternate)
-	roundMode := r.GameMode
-	if roundMode == "mix" {
-		if r.CurrentRound%2 == 0 {
-			roundMode = "multiple_choice"
-		} else {
-			roundMode = "exact"
-		}
+	// Spēles režīms šobrīd vienmēr ir 4 atbilžu varianti
+	opts := listing.Options
+	if len(opts) < 4 {
+		opts = ss.GeneratePriceOptions(listing.ActualPrice)
 	}
-
-	if roundMode == "multiple_choice" {
-		clientListing.Options = listing.Options
-	}
+	clientListing.Options = opts
 
 	r.CurrentListing = &clientListing
 	r.Status = StatusRoundActive

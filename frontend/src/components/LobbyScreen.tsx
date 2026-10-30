@@ -174,49 +174,6 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({
             })}
           </div>
         </div>
-
-        {/* 2. Spēles režīms */}
-        <div className="space-y-1.5">
-          <div className="text-xs font-semibold text-slate-400 flex items-center justify-between">
-            <span>SPĒLES TIPS:</span>
-            <span className="text-amber-400 font-bold">
-              {room.game_mode === 'multiple_choice' ? '4 Varianti' : room.game_mode === 'mix' ? 'Jauktais' : 'Ierakstīt cenu'}
-            </span>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { id: 'exact', label: 'Ierakstīt cenu' },
-              { id: 'multiple_choice', label: '4 Varianti' },
-              { id: 'mix', label: 'Jauktais' },
-            ].map((m) => {
-              const count = modeStats[m.id] || 0;
-              const pct = Math.round((count / totalPlayers) * 100);
-              const isMyVote = myModeVote === m.id;
-
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => onVote(myCountVote, m.id, myCatVote)}
-                  className={`relative overflow-hidden p-2 rounded-xl border text-center transition-all ${
-                    isMyVote
-                      ? 'border-amber-500 bg-amber-500/10 text-amber-300'
-                      : 'border-slate-700 bg-slate-900 text-slate-400'
-                  }`}
-                >
-                  <div
-                    className="absolute bottom-0 left-0 top-0 bg-amber-500/20 -z-0 transition-all duration-300"
-                    style={{ width: `${pct}%` }}
-                  />
-                  <div className="relative z-10">
-                    <div className="text-xs font-bold">{m.label}</div>
-                    <div className="text-[10px] font-mono opacity-80">{pct}%</div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
       </div>
 
       {/* Apakšējās pogas */}

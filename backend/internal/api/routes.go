@@ -118,11 +118,9 @@ func (s *Server) handleCreateRoom(w http.ResponseWriter, r *http.Request) {
 
 	code := generateRoomCode()
 	room := s.hub.GetOrCreateRoom(code, req.HostID, req.IsPublic)
+	room.GameMode = "multiple_choice"
 	if req.Category != "" {
 		room.Category = req.Category
-	}
-	if req.GameMode != "" {
-		room.GameMode = req.GameMode
 	}
 
 	w.Header().Set("Content-Type", "application/json")

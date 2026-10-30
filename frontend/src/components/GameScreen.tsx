@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Send, CheckCircle2, ZoomIn, MapPin } from 'lucide-react';
+import { Clock, CheckCircle2, ZoomIn, MapPin } from 'lucide-react';
 import { Room } from '../types';
 import { playTick } from '../utils/audio';
 
@@ -14,7 +14,6 @@ export const GameScreen: React.FC<GameScreenProps> = ({
   currentPlayerId,
   onSubmitGuess,
 }) => {
-  const [guessInput, setGuessInput] = useState<string>('');
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isZoomed, setIsZoomed] = useState(false);
   const [timeLeft, setTimeLeft] = useState(room.time_limit_sec || 45);
@@ -46,34 +45,14 @@ export const GameScreen: React.FC<GameScreenProps> = ({
 
   // Reset local input on round change
   useEffect(() => {
-    setGuessInput('');
     setSelectedOption(null);
   }, [room.current_round]);
-
-  const handleQuickAdd = (amount: number) => {
-    const current = parseFloat(guessInput.replace(/\s+/g, '')) || 0;
-    setGuessInput(String(current + amount));
-  };
-
-  const handleExactSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const price = parseFloat(guessInput.replace(/\s+/g, ''));
-    if (!isNaN(price) && price > 0 && !hasGuessed) {
-      onSubmitGuess(price);
-    }
-  };
 
   const handleOptionSelect = (optionPrice: number) => {
     if (!hasGuessed) {
       setSelectedOption(optionPrice);
       onSubmitGuess(optionPrice);
     }
-  };
-
-  const formatPriceInput = (val: string) => {
-    const num = val.replace(/\D/g, '');
-    if (!num) return '';
-    return Number(num).toLocaleString('lv-LV');
   };
 
   const timerPercent = Math.max(0, Math.min(100, (timeLeft / (room.time_limit_sec || 45)) * 100));
@@ -169,14 +148,14 @@ export const GameScreen: React.FC<GameScreenProps> = ({
             />
           </div>
         </div>
-      ) : isMultipleChoice ? (
-        /* Režīms: 4 Atbilžu varianti */
+      ) : (
+        /* Režīms: Vienmēr 4 Atbilžu varianti */
         <div className="space-y-2.5">
           <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block text-center">
             Izvēlies pareizo ss.lv cenu:
           </span>
           <div className="grid grid-cols-2 gap-2.5">
-            {listing.options?.map((opt, i) => {
+            {(listing.options && listing.options.length >= 4 ? listing.options : [500, 1500, 4500, 10000]).map((opt, i) => {
               const colors = [
                 'bg-red-500/10 hover:bg-red-500/20 border-red-500/50 text-red-300',
                 'bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/50 text-blue-300',
@@ -199,56 +178,6 @@ export const GameScreen: React.FC<GameScreenProps> = ({
             })}
           </div>
         </div>
-      ) : (
-        /* Režīms: Ierakstīt cenu */
-        <form onSubmit={handleExactSubmit} className="space-y-3">
-          <div className="relative">
-            <input
-              type="text"
-              inputMode="numeric"
-              value={formatPriceInput(guessInput)}
-              onChange={(e) => setGuessInput(e.target.value)}
-              placeholder="0"
-              className="w-full bg-slate-900 border-2 border-slate-700 rounded-2xl px-4 py-3.5 text-center font-mono font-black text-3xl text-amber-400 placeholder-slate-700 focus:outline-none focus:border-amber-500 shadow-inner"
-              autoFocus
-            />
-            <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xl font-bold text-slate-500">
-              €
-            </span>
-          </div>
-
-          {/* Ātrās pogas */}
-          <div className="grid grid-cols-4 gap-2">
-            {[100, 1000, 5000, 10000].map((amt) => (
-              <button
-                key={amt}
-                type="button"
-                onClick={() => handleQuickAdd(amt)}
-                className="py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-300 transition-colors"
-              >
-                +{amt >= 1000 ? `${amt / 1000}k` : amt}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setGuessInput('')}
-              className="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-400"
-            >
-              Dzēst
-            </button>
-            <button
-              type="submit"
-              disabled={!guessInput.trim()}
-              className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-base flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 disabled:opacity-50 transition-all active:scale-[0.98]"
-            >
-              <Send className="w-4 h-4 stroke-[2.5]" />
-              Apstiprināt Cenu
-            </button>
-          </div>
-        </form>
       )}
 
       {/* Palielinātais attēls (Lightbox) */}

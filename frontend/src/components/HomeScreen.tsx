@@ -200,7 +200,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       </span>
                     </div>
                     <div className="text-xs text-slate-400 mt-0.5">
-                      {room.game_mode === 'multiple_choice' ? '4 Varianti' : 'Ierakstīt cenu'} · {room.question_count} jautājumi
+                      {room.question_count} jautājumi · 4 Varianti
                     </div>
                   </div>
                 </div>
@@ -277,37 +277,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </select>
             </div>
 
-            {/* Spēles režīms */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Spēles tips
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSelectedMode('exact')}
-                  className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
-                    selectedMode === 'exact'
-                      ? 'bg-amber-500/10 border-amber-500 text-amber-400'
-                      : 'bg-slate-800 border-slate-700 text-slate-400'
-                  }`}
-                >
-                  Ierakstīt cenu
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedMode('multiple_choice')}
-                  className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
-                    selectedMode === 'multiple_choice'
-                      ? 'bg-amber-500/10 border-amber-500 text-amber-400'
-                      : 'bg-slate-800 border-slate-700 text-slate-400'
-                  }`}
-                >
-                  4 Atbilžu varianti
-                </button>
-              </div>
-            </div>
-
             <div className="pt-2 flex gap-2">
               <button
                 type="button"
@@ -320,7 +289,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 type="button"
                 onClick={() => {
                   setShowCreateModal(false);
-                  onCreateRoom(isPublic, selectedCategory, selectedMode);
+                  onCreateRoom(isPublic, selectedCategory, 'multiple_choice');
                 }}
                 className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm transition-colors shadow-lg shadow-amber-500/20"
               >
