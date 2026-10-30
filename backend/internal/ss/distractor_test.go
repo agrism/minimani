@@ -28,3 +28,4 @@ func TestGeneratePriceOptions(t *testing.T) {
 		t.Errorf("Actual price %.2f was not found in generated options", actual)
 	}
 }
+

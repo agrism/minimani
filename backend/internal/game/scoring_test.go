@@ -46,3 +46,4 @@ func TestCalculateChoiceScore(t *testing.T) {
 		t.Errorf("Expected 0 points for incorrect choice, got %d", resFail.TotalPoints)
 	}
 }
+
