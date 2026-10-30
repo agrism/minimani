@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -272,9 +273,14 @@ func cleanHTML(s string) string {
 }
 
 // FetchLiveListings crawls ss.lv live for real-estate homes and returns scraped listings with local image paths
-func FetchLiveListings(ctx context.Context, mediaDir string, count int) ([]ScrapedListing, error) {
+func FetchLiveListings(ctx context.Context, mediaDir string, count int, excludeURLs map[string]bool) ([]ScrapedListing, error) {
 	urls := []string{
 		"https://www.ss.lv/lv/real-estate/homes-summer-residences/today/",
+		"https://www.ss.lv/lv/real-estate/homes-summer-residences/page2.html",
+		"https://www.ss.lv/lv/real-estate/homes-summer-residences/page3.html",
+		"https://www.ss.lv/lv/real-estate/homes-summer-residences/riga-region/today/",
+		"https://www.ss.lv/lv/real-estate/homes-summer-residences/jurmala/today/",
+		"https://www.ss.lv/lv/real-estate/homes-summer-residences/ogre-and-reg/today/",
 		"https://www.ss.lv/lv/real-estate/homes-summer-residences/",
 		"https://www.ss.lv/lv/real-estate/flats/today/",
 	}
@@ -283,23 +289,29 @@ func FetchLiveListings(ctx context.Context, mediaDir string, count int) ([]Scrap
 	seen := make(map[string]bool)
 
 	for _, u := range urls {
-		links, err := FetchCategoryAdLinks(u, count+5)
+		links, err := FetchCategoryAdLinks(u, 25)
 		if err == nil {
 			for _, l := range links {
-				if !seen[l] {
+				if !seen[l] && !excludeURLs[l] {
 					seen[l] = true
 					allLinks = append(allLinks, l)
 				}
 			}
 		}
-		if len(allLinks) >= count*2 {
+		if len(allLinks) >= 60 {
 			break
 		}
 	}
 
 	if len(allLinks) == 0 {
-		return nil, fmt.Errorf("neizdevās atrast sludinājumu saites ss.lv")
+		return nil, fmt.Errorf("neizdevās atrast jaunas sludinājumu saites ss.lv")
 	}
+
+	// Nejauši sajaucam saites (random shuffle), lai katrā spēlē būtu citi sludinājumi
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	rng.Shuffle(len(allLinks), func(i, j int) {
+		allLinks[i], allLinks[j] = allLinks[j], allLinks[i]
+	})
 
 	var results []ScrapedListing
 	for _, link := range allLinks {
@@ -322,7 +334,7 @@ func FetchLiveListings(ctx context.Context, mediaDir string, count int) ([]Scrap
 		if len(results) >= count {
 			break
 		}
-		time.Sleep(150 * time.Millisecond) // Respectful crawl delay
+		time.Sleep(120 * time.Millisecond) // Respectful crawl delay
 	}
 
 	if len(results) == 0 {

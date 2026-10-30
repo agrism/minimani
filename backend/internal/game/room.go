@@ -92,6 +92,9 @@ type Room struct {
 	Listings       []RoundListing       `json:"-"`
 	CurrentListing *RoundListing        `json:"current_listing,omitempty"`
 
+	PlayedIDs      map[string]bool      `json:"-"`
+	PlayedURLs     map[string]bool      `json:"-"`
+
 	BroadcastFunc  func(msg []byte)     `json:"-"`
 	TimerCancel    context.CancelFunc   `json:"-"`
 	Queries        *db.Queries          `json:"-"`
@@ -113,6 +116,8 @@ func NewRoom(code, hostID string, isPublic bool, queries *db.Queries, broadcast 
 		VotesMode:     make(map[string]string),
 		VotesCategory: make(map[string]string),
 		RoundGuesses:  make(map[string]PlayerGuessResult),
+		PlayedIDs:     make(map[string]bool),
+		PlayedURLs:    make(map[string]bool),
 		BroadcastFunc: broadcast,
 		Queries:       queries,
 	}
@@ -258,7 +263,7 @@ func (r *Room) StartGame(ctx context.Context) error {
 		defer cancel()
 
 		var listings []RoundListing
-		scraped, err := ss.FetchLiveListings(scrapeCtx, mediaDir, needed)
+		scraped, err := ss.FetchLiveListings(scrapeCtx, mediaDir, needed, r.PlayedURLs)
 		if err == nil && len(scraped) > 0 {
 			for _, s := range scraped {
 				opts := ss.GeneratePriceOptions(s.Price)
@@ -282,6 +287,9 @@ func (r *Room) StartGame(ctx context.Context) error {
 					idStr = dbListing.ID.String()
 				}
 
+				r.PlayedURLs[s.SourceURL] = true
+				r.PlayedIDs[idStr] = true
+
 				listings = append(listings, RoundListing{
 					ID:          idStr,
 					Category:    "real_estate",
@@ -296,14 +304,26 @@ func (r *Room) StartGame(ctx context.Context) error {
 			}
 		}
 
-		// 2. If needed more listings, fill remaining from database
+		// 2. If needed more listings, fill remaining from database (excluding already played)
 		if len(listings) < needed {
+			fetchLimit := int32((needed - len(listings)) * 4)
+			if fetchLimit < 15 {
+				fetchLimit = 15
+			}
 			dbListings, err := r.Queries.GetRandomListings(context.Background(), db.GetRandomListingsParams{
 				Category: "all",
-				Limit:    int32(needed - len(listings)),
+				Limit:    fetchLimit,
 			})
 			if err == nil {
 				for _, l := range dbListings {
+					if len(listings) >= needed {
+						break
+					}
+					idStr := l.ID.String()
+					if r.PlayedIDs[idStr] {
+						continue // Don't repeat ads in consecutive games
+					}
+
 					var opts []float64
 					if len(l.Options) > 0 {
 						_ = json.Unmarshal(l.Options, &opts)
@@ -315,8 +335,11 @@ func (r *Room) StartGame(ctx context.Context) error {
 
 					descText, params := ss.UnpackDescriptionWithParams(l.Description.String)
 
+					r.PlayedIDs[idStr] = true
+					_ = r.Queries.IncrementListingTimesPlayed(context.Background(), l.ID)
+
 					listings = append(listings, RoundListing{
-						ID:          l.ID.String(),
+						ID:          idStr,
 						Category:    l.Category,
 						Title:       l.Title,
 						Description: descText,
