@@ -53,6 +53,7 @@ export const RevealScreen: React.FC<RevealScreenProps> = ({
           <img
             src={listing.image_path}
             alt={listing.title}
+            referrerPolicy="no-referrer"
             className="w-20 h-20 rounded-xl object-cover shrink-0 bg-slate-900 border border-slate-750"
           />
           <div className="flex-1 min-w-0">

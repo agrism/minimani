@@ -24,3 +24,4 @@ npm run build
 cd ..
 
 echo "✅ MiniMani deployed successfully to https://minimani.kilograms.lv"
+

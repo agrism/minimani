@@ -98,6 +98,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           <img
             src={listing.image_path}
             alt={listing.title}
+            referrerPolicy="no-referrer"
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           <div className="absolute top-3 left-3 flex gap-2">
@@ -210,6 +211,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           <img
             src={listing.image_path}
             alt={listing.title}
+            referrerPolicy="no-referrer"
             className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl"
           />
         </div>
