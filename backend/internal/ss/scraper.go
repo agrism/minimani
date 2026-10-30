@@ -272,24 +272,101 @@ func cleanHTML(s string) string {
 	return strings.TrimSpace(s)
 }
 
-// FetchLiveListings crawls ss.lv live for real-estate homes and returns scraped listings with local image paths
+var (
+	cachedMaxPages     int
+	cachedMaxPagesTime time.Time
+)
+
+// GetHomesSellMaxPages dynamically determines total page count from "Iepriekšējie" link (e.g. 91)
+func GetHomesSellMaxPages() int {
+	if cachedMaxPages > 0 && time.Since(cachedMaxPagesTime) < 30*time.Minute {
+		return cachedMaxPages
+	}
+
+	client := &http.Client{Timeout: 8 * time.Second}
+	req, err := http.NewRequest("GET", "https://www.ss.lv/lv/real-estate/homes-summer-residences/sell/", nil)
+	if err != nil {
+		return 91
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
+	req.Header.Set("Referer", "https://www.ss.lv/")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		if cachedMaxPages > 0 {
+			return cachedMaxPages
+		}
+		return 91
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	htmlStr := string(bodyBytes)
+
+	// Look for rel="prev" or "[Iepriekšējie]" link: e.g. href="/lv/real-estate/homes-summer-residences/sell/page91.html"
+	re := regexp.MustCompile(`href=["'](?:/lv/real-estate/homes-summer-residences/sell/)?page([0-9]+)\.html["'][^>]*>(?:<img[^>]*>)?\s*Iepriekšējie`)
+	if m := re.FindStringSubmatch(htmlStr); len(m) > 1 {
+		if p, err := strconv.Atoi(m[1]); err == nil && p > 0 {
+			cachedMaxPages = p
+			cachedMaxPagesTime = time.Now()
+			return p
+		}
+	}
+
+	// Fallback regex looking for rel="prev"
+	reFallback := regexp.MustCompile(`rel=["']prev["'][^>]*href=["'][^"']*page([0-9]+)\.html["']`)
+	if m := reFallback.FindStringSubmatch(htmlStr); len(m) > 1 {
+		if p, err := strconv.Atoi(m[1]); err == nil && p > 0 {
+			cachedMaxPages = p
+			cachedMaxPagesTime = time.Now()
+			return p
+		}
+	}
+
+	if cachedMaxPages > 0 {
+		return cachedMaxPages
+	}
+	return 91
+}
+
+// FetchLiveListings crawls ss.lv live for real-estate homes by picking random pages from 1 to maxPages
 func FetchLiveListings(ctx context.Context, mediaDir string, count int, excludeURLs map[string]bool) ([]ScrapedListing, error) {
-	urls := []string{
-		"https://www.ss.lv/lv/real-estate/homes-summer-residences/today/",
-		"https://www.ss.lv/lv/real-estate/homes-summer-residences/page2.html",
-		"https://www.ss.lv/lv/real-estate/homes-summer-residences/page3.html",
-		"https://www.ss.lv/lv/real-estate/homes-summer-residences/riga-region/today/",
-		"https://www.ss.lv/lv/real-estate/homes-summer-residences/jurmala/today/",
-		"https://www.ss.lv/lv/real-estate/homes-summer-residences/ogre-and-reg/today/",
-		"https://www.ss.lv/lv/real-estate/homes-summer-residences/",
-		"https://www.ss.lv/lv/real-estate/flats/today/",
+	maxPages := GetHomesSellMaxPages()
+	if maxPages <= 0 {
+		maxPages = 91
+	}
+
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	// Pick random unique pages out of 1..maxPages
+	numPagesToFetch := (count / 4) + 3 // e.g. 4-6 random pages from 91
+	if numPagesToFetch > maxPages {
+		numPagesToFetch = maxPages
+	}
+
+	pageSet := make(map[int]bool)
+	var randomPages []int
+	for len(randomPages) < numPagesToFetch {
+		p := rng.Intn(maxPages) + 1
+		if !pageSet[p] {
+			pageSet[p] = true
+			randomPages = append(randomPages, p)
+		}
 	}
 
 	var allLinks []string
 	seen := make(map[string]bool)
 
-	for _, u := range urls {
-		links, err := FetchCategoryAdLinks(u, 25)
+	for _, pageNum := range randomPages {
+		if ctx.Err() != nil {
+			break
+		}
+		pageURL := "https://www.ss.lv/lv/real-estate/homes-summer-residences/sell/"
+		if pageNum > 1 {
+			pageURL = fmt.Sprintf("https://www.ss.lv/lv/real-estate/homes-summer-residences/sell/page%d.html", pageNum)
+		}
+
+		links, err := FetchCategoryAdLinks(pageURL, 30)
 		if err == nil {
 			for _, l := range links {
 				if !seen[l] && !excludeURLs[l] {
@@ -298,7 +375,7 @@ func FetchLiveListings(ctx context.Context, mediaDir string, count int, excludeU
 				}
 			}
 		}
-		if len(allLinks) >= 60 {
+		if len(allLinks) >= count*4 {
 			break
 		}
 	}
@@ -307,8 +384,7 @@ func FetchLiveListings(ctx context.Context, mediaDir string, count int, excludeU
 		return nil, fmt.Errorf("neizdevās atrast jaunas sludinājumu saites ss.lv")
 	}
 
-	// Nejauši sajaucam saites (random shuffle), lai katrā spēlē būtu citi sludinājumi
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	// Nejauši sajaucam saites (random shuffle)
 	rng.Shuffle(len(allLinks), func(i, j int) {
 		allLinks[i], allLinks[j] = allLinks[j], allLinks[i]
 	})
