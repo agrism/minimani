@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Zap, Plus, Users, Lock, Globe, Sparkles } from 'lucide-react';
+import { Play, Zap, Plus, Users, Lock, Globe, Sparkles, HelpCircle } from 'lucide-react';
 import { PublicRoomItem } from '../types';
 
 interface HomeScreenProps {
@@ -9,6 +9,7 @@ interface HomeScreenProps {
   onCreateRoom: (isPublic: boolean, category: string, gameMode: string) => void;
   onJoinRoom: (code: string) => void;
   onQuickJoin: () => void;
+  onOpenRules?: () => void;
 }
 
 const AVATARS = ['🚗', '🏎️', '🚜', '🏡', '💎', '📱', '🔨', '🍻', '🌲', '👑', '🚀', '🔥'];
@@ -20,6 +21,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onCreateRoom,
   onJoinRoom,
   onQuickJoin,
+  onOpenRules,
 }) => {
   const [code, setCode] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -245,6 +247,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
         )}
       </div>
+
+      {/* Informatīvā saite par punktiem */}
+      {onOpenRules && (
+        <div className="text-center pt-1 pb-2">
+          <button
+            type="button"
+            onClick={onOpenRules}
+            className="text-xs text-slate-400 hover:text-amber-400 inline-flex items-center gap-1.5 transition-colors underline underline-offset-4 decoration-slate-700 hover:decoration-amber-400"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
+            Kā tiek aprēķināti punkti un ātruma bonuss?
+          </button>
+        </div>
+      )}
 
       {/* Izveidošanas modālais logs */}
       {showCreateModal && (

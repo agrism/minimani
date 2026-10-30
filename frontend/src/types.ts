@@ -27,6 +27,24 @@ export interface RoundListing {
   actual_price?: number;
 }
 
+export interface ScoringRuleInfo {
+  mode: string;
+  title: string;
+  description: string;
+  base_points: number;
+  max_speed_bonus: number;
+  max_total_points: number;
+  formula_explanation: string;
+  examples: string[];
+}
+
+export interface ScoringRulesResponse {
+  active_mode: string;
+  current_rules: ScoringRuleInfo;
+  all_modes: ScoringRuleInfo[];
+  general_tips: string[];
+}
+
 export interface PlayerGuessResult {
   player_id: string;
   nickname: string;

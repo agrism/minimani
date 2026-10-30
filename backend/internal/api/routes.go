@@ -77,6 +77,8 @@ func (s *Server) setupRoutes() {
 	fileServer(r, "/media", filesDir)
 
 	// API endpoints
+	r.Get("/api/rules", s.handleGetScoringRules)
+
 	r.Route("/api/rooms", func(r chi.Router) {
 		r.Post("/create", s.handleCreateRoom)
 		r.Get("/public", s.handleListPublicRooms)
@@ -128,6 +130,12 @@ func (s *Server) handleCreateRoom(w http.ResponseWriter, r *http.Request) {
 		"code": code,
 		"room": room,
 	})
+}
+
+func (s *Server) handleGetScoringRules(w http.ResponseWriter, r *http.Request) {
+	rules := game.GetScoringRules()
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(rules)
 }
 
 func (s *Server) handleListPublicRooms(w http.ResponseWriter, r *http.Request) {

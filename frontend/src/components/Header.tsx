@@ -1,13 +1,14 @@
 import React from 'react';
-import { Tag, Users, LogOut } from 'lucide-react';
+import { Tag, Users, LogOut, HelpCircle } from 'lucide-react';
 
 interface HeaderProps {
   roomCode?: string;
   playerCount?: number;
   onLeave?: () => void;
+  onOpenRules?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ roomCode, playerCount, onLeave }) => {
+export const Header: React.FC<HeaderProps> = ({ roomCode, playerCount, onLeave, onOpenRules }) => {
   return (
     <header className="w-full max-w-2xl mx-auto px-4 py-3 flex items-center justify-between border-b border-slate-800">
       <div
@@ -28,8 +29,19 @@ export const Header: React.FC<HeaderProps> = ({ roomCode, playerCount, onLeave }
         </div>
       </div>
 
-      {roomCode && (
-        <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
+        {onOpenRules && (
+          <button
+            onClick={onOpenRules}
+            className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-amber-400 bg-slate-850 hover:bg-slate-800 border border-slate-750 px-2.5 py-1.5 rounded-xl font-bold transition-all shadow-sm active:scale-95"
+            title="Kā tiek aprēķināti punkti?"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Noteikumi</span>
+          </button>
+        )}
+
+        {roomCode && (
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 shadow-sm">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span className="font-mono font-bold text-amber-400 text-sm tracking-wider">{roomCode}</span>
@@ -40,18 +52,19 @@ export const Header: React.FC<HeaderProps> = ({ roomCode, playerCount, onLeave }
               </span>
             )}
           </div>
-          {onLeave && (
-            <button
-              onClick={onLeave}
-              className="flex items-center gap-1.5 text-xs text-rose-300 hover:text-white bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/60 hover:border-rose-500 transition-all px-3 py-1.5 rounded-xl font-bold shadow-sm active:scale-95"
-              title="Pamest istabu un izvēlēties citu"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Iziet</span>
-            </button>
-          )}
-        </div>
-      )}
+        )}
+
+        {roomCode && onLeave && (
+          <button
+            onClick={onLeave}
+            className="flex items-center gap-1.5 text-xs text-rose-300 hover:text-white bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/60 hover:border-rose-500 transition-all px-3 py-1.5 rounded-xl font-bold shadow-sm active:scale-95"
+            title="Pamest istabu un izvēlēties citu"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Iziet</span>
+          </button>
+        )}
+      </div>
     </header>
   );
 };

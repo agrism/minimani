@@ -5,6 +5,7 @@ import { LobbyScreen } from './components/LobbyScreen';
 import { GameScreen } from './components/GameScreen';
 import { RevealScreen } from './components/RevealScreen';
 import { PodiumScreen } from './components/PodiumScreen';
+import { RulesModal } from './components/RulesModal';
 import { Room } from './types';
 
 export const App: React.FC = () => {
@@ -27,6 +28,7 @@ export const App: React.FC = () => {
 
   const [room, setRoom] = useState<Room | null>(null);
   const [isStarting, setIsStarting] = useState(false);
+  const [showRules, setShowRules] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
 
   // Update profile
@@ -218,6 +220,7 @@ export const App: React.FC = () => {
         roomCode={room?.code}
         playerCount={room ? Object.keys(room.players || {}).length : undefined}
         onLeave={room ? handleLeaveRoom : undefined}
+        onOpenRules={() => setShowRules(true)}
       />
 
       <main className="flex-1 flex flex-col justify-center">
@@ -230,6 +233,7 @@ export const App: React.FC = () => {
             onCreateRoom={handleCreateRoom}
             onJoinRoom={handleJoinRoom}
             onQuickJoin={handleQuickJoin}
+            onOpenRules={() => setShowRules(true)}
           />
         )}
 
@@ -319,9 +323,19 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      <footer className="py-3 text-center text-[11px] text-slate-600 border-t border-slate-900">
-        MiniMani spēle · Sludinājumu dati no ss.lv · Ražots Latvijā
+      <footer className="py-3 text-center text-[11px] text-slate-500 border-t border-slate-900 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4">
+        <span>MiniMani spēle · Sludinājumu dati no ss.lv · Ražots Latvijā</span>
+        <span>·</span>
+        <button
+          onClick={() => setShowRules(true)}
+          className="text-slate-400 hover:text-amber-400 font-semibold underline underline-offset-2 transition-colors"
+        >
+          Kā aprēķina punktus? (Noteikumi)
+        </button>
       </footer>
+
+      {/* Informatīvais punktu aprēķina logs */}
+      <RulesModal isOpen={showRules} onClose={() => setShowRules(false)} />
     </div>
   );
 };
