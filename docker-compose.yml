@@ -30,9 +30,12 @@ services:
       ENV: production
       DATABASE_URL: postgres://minimani:${POSTGRES_PASSWORD:-minimani_production_secret_2026}@db:5432/minimani_db?sslmode=disable
       JWT_SECRET: ${JWT_SECRET:-minimani_super_secret_jwt_key_2026_prod}
+    volumes:
+      - ./media:/app/media
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
   minimani_pg_data:
+
