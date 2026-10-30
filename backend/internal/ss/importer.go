@@ -122,3 +122,4 @@ func ImportHomesCatalog(ctx context.Context, pool *pgxpool.Pool, queries *db.Que
 	log.Printf("🎉 Importēšana pabeigta! Veiksmīgi saglabāti %d jauni sludinājumi.\n", totalImported)
 	return totalImported, nil
 }
+
