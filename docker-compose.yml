@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: minimani-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: minimani_db
+      POSTGRES_USER: minimani
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-minimani_production_secret_2026}
+    volumes:
+      - minimani_pg_data:/var/lib/postgresql/data
+      - ./backend/internal/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U minimani -d minimani_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: minimani-backend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8088:8088"
+    environment:
+      PORT: 8088
+      ENV: production
+      DATABASE_URL: postgres://minimani:${POSTGRES_PASSWORD:-minimani_production_secret_2026}@db:5432/minimani_db?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:-minimani_super_secret_jwt_key_2026_prod}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  minimani_pg_data:
