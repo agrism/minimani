@@ -5,12 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"math/rand"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"minimani/backend/internal/storage"
 )
 
 type ParameterItem struct {
@@ -399,12 +402,15 @@ func FetchLiveListings(ctx context.Context, mediaDir string, count int, excludeU
 			continue
 		}
 
-		// Download real image
-		localPath, err := DownloadAndSaveImage(mediaDir, ad.ImageURL)
-		if err != nil {
-			localPath = ad.ImageURL
+		// Pārveidojam uz WebP atmiņā un augšupielādējam tieši uz Hetzner S3 (uz diska 0 baiti!)
+		if storage.GlobalStorage != nil {
+			s3URL, err := storage.GlobalStorage.ConvertAndUploadWebP(ctx, ad.ImageURL)
+			if err == nil && s3URL != "" {
+				ad.ImageURL = s3URL
+			} else {
+				log.Printf("⚠️ S3 WebP augšupielāde neizdevās, izmantojam ss.lv adresi: %v", err)
+			}
 		}
-		ad.ImageURL = localPath
 
 		results = append(results, *ad)
 		if len(results) >= count {

@@ -14,6 +14,7 @@ import (
 
 	"minimani/backend/internal/api"
 	db "minimani/backend/internal/db/sqlc"
+	"minimani/backend/internal/storage"
 	"minimani/backend/internal/websocket"
 )
 
@@ -41,6 +42,11 @@ func main() {
 		log.Fatalf("Datubāze nav sasniedzama: %v", err)
 	}
 	log.Println("✅ PostgreSQL (PostGIS) veiksmīgi pieslēgts!")
+
+	// Inicializējam Hetzner S3 mākoņa glabātuvi
+	if _, err := storage.InitStorage(); err != nil {
+		log.Printf("ℹ️ S3 glabātuve nav aktīva (%v), tiks izmantoti tiešie attēlu resursi\n", err)
+	}
 
 	queries := db.New(pool)
 	hub := websocket.NewHub(queries)
