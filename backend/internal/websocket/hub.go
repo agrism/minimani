@@ -205,6 +205,10 @@ func (h *Hub) HandleWebSocket(w http.ResponseWriter, r *http.Request, roomCode s
 				price = v
 			}
 			room.SubmitGuess(playerID, price)
+
+		case "play_again":
+			room.ResetToLobby()
+			room.BroadcastState()
 		}
 	}
 }

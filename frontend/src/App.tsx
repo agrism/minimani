@@ -201,6 +201,17 @@ export const App: React.FC = () => {
     }
   };
 
+  const handlePlayAgain = () => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(
+        JSON.stringify({
+          action: 'play_again',
+          player_id: playerId,
+        })
+      );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
       <Header
@@ -270,7 +281,7 @@ export const App: React.FC = () => {
           <PodiumScreen
             room={room}
             currentPlayerId={playerId}
-            onPlayAgain={() => handleVote(room.question_count, room.game_mode, room.category)}
+            onPlayAgain={handlePlayAgain}
             onGoHome={handleLeaveRoom}
           />
         )}

@@ -420,6 +420,29 @@ func (r *Room) FinishRound(roundNum int) {
 	r.NextRound()
 }
 
+// ResetToLobby resets the room back to lobby for another game with the same players
+func (r *Room) ResetToLobby() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.Status = StatusLobby
+	r.CurrentRound = 0
+	r.CurrentListing = nil
+	r.RoundGuesses = make(map[string]PlayerGuessResult)
+	r.Listings = nil
+
+	for _, p := range r.Players {
+		p.Score = 0
+		p.IsReady = false
+		p.HasGuess = false
+	}
+
+	if r.TimerCancel != nil {
+		r.TimerCancel()
+		r.TimerCancel = nil
+	}
+}
+
 // BroadcastState sends full room sync to all clients
 func (r *Room) BroadcastState() {
 	r.mu.RLock()
