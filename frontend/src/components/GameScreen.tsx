@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Send, CheckCircle2, ZoomIn, MapPin } from 'lucide-react';
 import { Room } from '../types';
+import { playTick } from '../utils/audio';
 
 interface GameScreenProps {
   room: Room;
@@ -33,6 +34,9 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       const elapsed = Math.floor((Date.now() - started) / 1000);
       const remaining = Math.max(0, (room.time_limit_sec || 45) - elapsed);
       setTimeLeft(remaining);
+      if (remaining <= 5 && remaining > 0 && remaining !== timeLeft) {
+        playTick();
+      }
     };
 
     updateTimer();

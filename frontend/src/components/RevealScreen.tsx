@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Sparkles, Trophy, Target, ArrowUp, ArrowDown } from 'lucide-react';
 import { Room, PlayerGuessResult } from '../types';
+import { playBullseye, playSuccess } from '../utils/audio';
 
 interface RevealScreenProps {
   room: Room;
@@ -21,6 +22,15 @@ export const RevealScreen: React.FC<RevealScreenProps> = ({
 
   // Cumulative player rankings
   const rankedPlayers = Object.values(room.players || {}).sort((a, b) => b.score - a.score);
+
+  useEffect(() => {
+    const myGuess = guessesMap[currentPlayerId];
+    if (myGuess?.is_bullseye) {
+      playBullseye();
+    } else {
+      playSuccess();
+    }
+  }, []);
 
   return (
     <div className="w-full max-w-md mx-auto px-4 py-4 space-y-4">
