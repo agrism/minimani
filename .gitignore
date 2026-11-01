@@ -2,6 +2,13 @@
 .env
 .env.local
 
+# Keys and secrets
+*.pem
+*.key
+id_*
+id_rsa*
+id_ed25519*
+
 # Operating System
 .DS_Store
 Thumbs.db
